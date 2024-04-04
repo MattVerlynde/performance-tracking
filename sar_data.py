@@ -97,45 +97,45 @@ class SARData(object):
         # Return as a RGB image
         return np.concatenate((red[:,:,None], green[:,:,None], blue[:,:,None]), axis=2)
 
-print("Loading SAR data...")
+# print("Loading SAR data...")
 
-# Define notable rectangular regions in the SAR data set
-region_complete = Region(range(0, 1024), range(0, 1024))
-region_nochange = Region(range(307, 455), range(52, 120))
-region_rye = Region(range(116, 146), range(328, 411))
-region_grass = Region(range(268, 330), range(128, 234))
+# # Define notable rectangular regions in the SAR data set
+# region_complete = Region(range(0, 1024), range(0, 1024))
+# region_nochange = Region(range(307, 455), range(52, 120))
+# region_rye = Region(range(116, 146), range(328, 411))
+# region_grass = Region(range(268, 330), range(128, 234))
 
-mask_forest = plt.imread("../SAR_Data/forestidx.tif")[:, :, 0].astype(bool, copy=True).flatten()
-mask_rye = plt.imread("../SAR_Data/ryeidx.tif")[:, :, 0].astype(bool, copy=True).flatten()
-mask_grass = plt.imread("../SAR_Data/grassidx.tif")[:, :, 0].astype(bool, copy=True).flatten()
+# mask_forest = plt.imread("../SAR_Data/forestidx.tif")[:, :, 0].astype(bool, copy=True).flatten()
+# mask_rye = plt.imread("../SAR_Data/ryeidx.tif")[:, :, 0].astype(bool, copy=True).flatten()
+# mask_grass = plt.imread("../SAR_Data/grassidx.tif")[:, :, 0].astype(bool, copy=True).flatten()
 
-# Load data
-march  = SARData().load("../SAR_Data", "fl062_l", (1024, 1024), header=True)
-april  = SARData().load("../SAR_Data", "fl063_l", (1024, 1024), header=False)
-may    = SARData().load("../SAR_Data", "fl064_l", (1024, 1024), header=False)
-june   = SARData().load("../SAR_Data", "fl065_l", (1024, 1024), header=False)
-july   = SARData().load("../SAR_Data", "fl068_l", (1024, 1024), header=False)
-august = SARData().load("../SAR_Data", "fl074_l", (1024, 1024), header=True)
+# # Load data
+# march  = SARData().load("../SAR_Data", "fl062_l", (1024, 1024), header=True)
+# april  = SARData().load("../SAR_Data", "fl063_l", (1024, 1024), header=False)
+# may    = SARData().load("../SAR_Data", "fl064_l", (1024, 1024), header=False)
+# june   = SARData().load("../SAR_Data", "fl065_l", (1024, 1024), header=False)
+# july   = SARData().load("../SAR_Data", "fl068_l", (1024, 1024), header=False)
+# august = SARData().load("../SAR_Data", "fl074_l", (1024, 1024), header=True)
 
-# The complete time series
-sar_list = [march, april, may, june, july, august]
+# # The complete time series
+# sar_list = [march, april, may, june, july, august]
 
-# Load the masks defining image regions
-mask_forest = plt.imread("../SAR_Data/forestidx.tif")[:, :, 0].astype(bool, copy=True).flatten()
-mask_rye = plt.imread("../SAR_Data/ryeidx.tif")[:, :, 0].astype(bool, copy=True).flatten()
-mask_grass = plt.imread("../SAR_Data/grassidx.tif")[:, :, 0].astype(bool, copy=True).flatten()
-masks_crops = [plt.imread("../SAR_Data/masks/{}.tif".format(x))[:, :, 0].astype(bool, copy=True).flatten() for x in range(1, 38)]
+# # Load the masks defining image regions
+# mask_forest = plt.imread("../SAR_Data/forestidx.tif")[:, :, 0].astype(bool, copy=True).flatten()
+# mask_rye = plt.imread("../SAR_Data/ryeidx.tif")[:, :, 0].astype(bool, copy=True).flatten()
+# mask_grass = plt.imread("../SAR_Data/grassidx.tif")[:, :, 0].astype(bool, copy=True).flatten()
+# masks_crops = [plt.imread("../SAR_Data/masks/{}.tif".format(x))[:, :, 0].astype(bool, copy=True).flatten() for x in range(1, 38)]
 
-# Time series of image regions
-sar_list_nochange = [X.masked_region(mask_forest) for X in sar_list]
-sar_list_rye      = [X.masked_region(mask_rye)    for X in sar_list]
-sar_list_grass    = [X.masked_region(mask_grass)  for X in sar_list]
+# # Time series of image regions
+# sar_list_nochange = [X.masked_region(mask_forest) for X in sar_list]
+# sar_list_rye      = [X.masked_region(mask_rye)    for X in sar_list]
+# sar_list_grass    = [X.masked_region(mask_grass)  for X in sar_list]
 
-# Make color composites
-plt.imsave("fig/march.jpg", march.color_composite())
-plt.imsave("fig/april.jpg", april.color_composite())
-plt.imsave("fig/may.jpg", may.color_composite())
-plt.imsave("fig/june.jpg", june.color_composite())
-plt.imsave("fig/july.jpg", july.color_composite())
-plt.imsave("fig/august.jpg", august.color_composite())
+# # Make color composites
+# plt.imsave("fig/march.jpg", march.color_composite())
+# plt.imsave("fig/april.jpg", april.color_composite())
+# plt.imsave("fig/may.jpg", may.color_composite())
+# plt.imsave("fig/june.jpg", june.color_composite())
+# plt.imsave("fig/july.jpg", july.color_composite())
+# plt.imsave("fig/august.jpg", august.color_composite())
 

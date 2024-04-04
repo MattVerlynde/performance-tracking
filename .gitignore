@@ -1,3 +1,5 @@
 fig/
 .*.swp
 __pycache__
+results*/
+data/
