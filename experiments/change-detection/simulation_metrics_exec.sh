@@ -20,5 +20,6 @@ echo $query > query
 export HISTIGNORE='*sudo -S*'
 echo "$password" | sudo -S -k docker cp query influxdb:/query
 rm query
+echo Query copied to container
 
 echo "$password" | sudo -S -k docker exec -it influxdb sh -c 'influx query -f query -r' > $output
