@@ -1,7 +1,8 @@
 #!/bin/bash
 
-command=${@:2}
+command=${@:3}
 output=$1
+password=$2
 
 t1=$(date -u +%Y-%m-%dT%T.%9NZ)
 
@@ -16,7 +17,7 @@ query="data=from(bucket: \"telegraf_bucket\")
 
 echo $query > query
 
-docker cp query influxdb:/query
+echo $password | sudo -S docker cp query influxdb:/query
 rm query
 
-docker exec -it influxdb sh -c 'influx query -f query -r' > $output
+echo $password | sudo -S docker exec -it influxdb sh -c 'influx query -f query -r' > $output
