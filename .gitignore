@@ -3,3 +3,5 @@ fig/
 __pycache__
 results*/
 data/
+query
+*.pid
