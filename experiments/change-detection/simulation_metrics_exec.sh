@@ -16,7 +16,7 @@ query="data=from(bucket: \"telegraf_bucket\")
 
 echo $query > query
 
-sudo docker cp query influxdb:/query
-sudo rm query
+docker cp query influxdb:/query
+rm query
 
-sudo docker exec -it influxdb sh -c 'influx query -f query -r' > $output
+docker exec -it influxdb sh -c 'influx query -f query -r' > $output
