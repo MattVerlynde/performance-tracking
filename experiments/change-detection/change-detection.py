@@ -14,6 +14,6 @@ if __name__ == "__main__":
 
     results_path = os.path.join(args.storage_path, "results.txt")
 
-    command = f"bash simulation_metrics_exec.sh {results_path} python3 ./cd_sklearn_pair_var.py {args.image} {args.window} {args.cores}"
+    command = f"bash ./simulation_metrics_exec.sh {results_path} python3 ./cd_sklearn_pair_var.py {args.image} {args.window} {args.cores}"
 
     result = subprocess.run(command, shell=True)
