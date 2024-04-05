@@ -3,4 +3,5 @@ __pycache__
 results*/
 data/
 query
-*.pid.qanat
+*.pid
+.qanat

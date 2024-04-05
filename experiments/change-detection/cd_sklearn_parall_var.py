@@ -262,7 +262,7 @@ if __name__ == "__main__":
         ('covariances', Covariance(n_jobs=n_jobs_cov)),
         ('detector', ChangeDetection(ENL=window_size**2, n_jobs=n_jobs_cd))
         ],
-        verbose=True)
+        verbose=False)
         
 
     pipelines = [pipeline]
@@ -273,7 +273,6 @@ if __name__ == "__main__":
     # Perform clustering
     results = {}
     for pipeline_name, pipeline in zip(pipelines_names, pipelines):
-        print(f'Pipeline: {pipeline_name}')
         res_pipeline = pipeline.fit_transform(data)
         labels_pred = LabelsToImage(height, width, window_size).fit_transform(
                         res_pipeline
