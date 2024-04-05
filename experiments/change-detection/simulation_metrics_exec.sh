@@ -17,9 +17,8 @@ query="data=from(bucket: \"telegraf_bucket\")
 
 echo $query > query
 
-export HISTIGNORE='*sudo -S*'
-echo "$password" | sudo -S -k docker cp query influxdb:/query
+docker cp query influxdb:/query -u 0
 rm query
 echo Query copied to container
 
-echo "$password" | sudo -S -k docker exec -i influxdb sh -c 'influx query -f query -r' > $output
+docker exec -u 0 -i influxdb sh -c 'influx query -f query -r' > $output
