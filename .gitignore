@@ -5,4 +5,4 @@ data/
 query
 *.pid
 .qanat
-experiments/bigearthnet
+./experiments/bigearthnet
