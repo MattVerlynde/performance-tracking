@@ -23,6 +23,7 @@ import datetime
 Lr = 0.001               # learn_rate
 Drop_LR_at_epochs = [100,150,175,190]  # multistep scheduler
 Epochs = 200            # no of epochs  
+Start_epoch = 0
 Milestones = [i - Start_epoch for i in Drop_LR_at_epochs]
 Batch_size = 256 * 2 
 Model_name = 'testing_the_time'
@@ -141,9 +142,9 @@ def data_loader(BATCH_SIZE = Batch_size):
     test_img_path = img_folder + 'test/'
 
     #tar = pd.read_csv('E:\Biglabelsjustclassnum.csv')
-    train_data = BigEarthNet_Dataset(train_img_path,train_lab_path)
-    val_data = BigEarthNet_Dataset(val_img_path,val_lab_path)
-    test_data = BigEarthNet_Dataset(test_img_path,test_lab_path)
+    train_data = BigEarthNet_Dataset(train_img_path)
+    val_data = BigEarthNet_Dataset(val_img_path)
+    test_data = BigEarthNet_Dataset(test_img_path)
 
     train_loader=torch.utils.data.DataLoader(train_data, batch_size = BATCH_SIZE, shuffle = True, num_workers=32, pin_memory = True)    
     val_loader=torch.utils.data.DataLoader(val_data,batch_size=BATCH_SIZE, shuffle = True, num_workers=16,pin_memory = True)
