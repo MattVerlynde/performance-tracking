@@ -2,7 +2,7 @@ fig/
 __pycache__
 results*/
 data/
-query
 *.pid
 .qanat
-./experiments/bigearthnet
+experiments/
+!experiments/change-detection
