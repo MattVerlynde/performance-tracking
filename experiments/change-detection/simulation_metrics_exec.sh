@@ -1,8 +1,7 @@
 #!/bin/bash
 
-command=${@:3}
+command=${@:2}
 output=$1
-password=$2
 
 t1=$(date -u +%Y-%m-%dT%T.%9NZ)
 
@@ -16,9 +15,6 @@ query="data=from(bucket: \"telegraf_bucket\")
     |> yield(name: \"mean\")"
 
 echo $query > query
-
-export HISTIGNORE='*sudo -S*'
-echo $password | sudo -S -k echo
 
 sudo docker cp query influxdb:/query
 rm query
