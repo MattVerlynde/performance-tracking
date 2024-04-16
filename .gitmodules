@@ -1,0 +1,3 @@
+[submodule "performance-tracking"]
+	path = performance-tracking
+	url = https://github.com/MattVerlynde/performance-tracking.git
