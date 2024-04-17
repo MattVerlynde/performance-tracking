@@ -1,0 +1,6 @@
+fig/
+__pycache__
+results*/
+data/
+*.pid
+.qanat
