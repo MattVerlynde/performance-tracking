@@ -1,5 +1,6 @@
 fig/
 __pycache__
+__init__.py
 results*/
 data/
 *.pid
