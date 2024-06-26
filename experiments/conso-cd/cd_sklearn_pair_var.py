@@ -139,146 +139,16 @@ class RobustChangeDetection(BaseEstimator, TransformerMixin):
         self.ENL = ENL
         self.tol = tol
         self.iter_max = iter_max
-    
-    def scale_and_shape_equality_robust_statistic(self, X, args):
-        """ GLRT test for testing a change in the scale or/and shape of 
-            a deterministic SIRV model.
-            Inputs:
-                * X = a (p, N, T) numpy array with:
-                    * p = dimension of vectors
-                    * N = number of Samples at each date
-                    * T = length of time series
-                * args = tol, iter_max for Tyler, scale
-            Outputs:
-                * the statistic given the observations in input"""
 
-        tol, iter_max, scale = args
-        (p, N, T) = X.shape
-
-        # Estimating sigma_0 using all the observations
-        (sigma_0, delta, niter) = tyler_estimator_covariance_matandtext(X, tol, iter_max)
-        isigma_0 = np.linalg.inv(sigma_0)
-
-        # Some initialisation
-        log_numerator_determinant_terms = T*N*np.log(np.abs(np.linalg.det(sigma_0)))
-        log_denominator_determinant_terms = 0
-        tau_0 = 0
-        logtau_t = 0
-        # Iterating on each date to compute the needed terms
-        for t in range(0,T):
-            # Estimating sigma_t
-            (sigma_t, delta, iteration) = tyler_estimator_covariance(X[:,:,t], tol, iter_max)
-
-            # Computing determinant add adding it to log_denominator_determinant_terms
-            log_denominator_determinant_terms = log_denominator_determinant_terms + \
-                                                N*np.log(np.abs(np.linalg.det(sigma_t)))
-
-            # Computing texture estimation
-            tau_0 =  tau_0 + np.diagonal(X[:,:,t].conj().T@isigma_0@X[:,:,t]) / T
-            logtau_t = logtau_t + np.log(np.diagonal(X[:,:,t].conj().T@np.linalg.inv(sigma_t)@X[:,:,t]))
-
-        # Computing quadratic terms
-        log_numerator_quadtratic_terms = T*p*np.sum(np.log(tau_0))
-        log_denominator_quadtratic_terms = p*np.sum(logtau_t)
-
-        # Final expression of the statistic
-        if scale=='linear':
-            lambda_ = np.exp(np.real(log_numerator_determinant_terms - log_denominator_determinant_terms + \
-            log_numerator_quadtratic_terms - log_denominator_quadtratic_terms))
-        else:
-            lambda_ = np.real(log_numerator_determinant_terms - log_denominator_determinant_terms + \
-            log_numerator_quadtratic_terms - log_denominator_quadtratic_terms)
-
-        return lambda_
-    
-    def tyler_estimator_covariance_matandtext(self, X, tol=0.0001, iter_max=20):
-        """ A function that computes the Modified Tyler Fixed Point Estimator for 
-        covariance matrix estimation under problem MatAndText.
-            Inputs:
-                * X = a matrix of size p*N*T with each saptial observation along column dimension and time
-                    observation along third dimension.
-                * tol = tolerance for convergence of estimator
-                * iter_max = number of maximum iterations
-            Outputs:
-                * sigma = the estimate
-                * delta = the final distance between two iterations
-                * iteration = number of iterations til convergence """
-
-        (p, N, T) = X.shape
-        delta = np.inf # Distance between two iterations
-        sigma = np.eye(p) # Initialise estimate to identity
-        iteration = 0
-
-        # Recursive algorithm
-        while (delta>tol) and iteration < iter_max:
-
-            # Compute the textures for each pixel using all the dates avalaibe
-            tau = 0
-            isigma = np.linalg.inv(sigma)
-            for t in range(0, T):
-                tau = tau + np.diagonal(X[:,:,t].conj().T@isigma@X[:,:,t])
-
-            # Computing expression of the estimator
-            sigma_new = 0
-            for t in range(0, T):
-                X_bis = X[:,:,t] / np.sqrt(tau)
-                sigma_new = sigma_new + (p/N) * X_bis@X_bis.conj().T
-
-            # Imposing trace constraint: Tr(sigma) = p
-            sigma_new = p*sigma_new/np.trace(sigma_new)
-
-            # Condition for stopping
-            delta = np.linalg.norm(sigma_new - sigma, 'fro') / np.linalg.norm(sigma, 'fro')
-
-            # Updating sigma
-            sigma = sigma_new
-            iteration = iteration + 1
-
-        if iteration == iter_max:
-            warnings.warn('Recursive algorithm did not converge')
-
-        return (sigma, delta, iteration)
-
-
-    
     def fit(self, X: ArrayLike, y=None):
-        T = X.shape[1]
-        p = X.shape[2]
-        n = self.ENL
-        self.parameters_predict = (T, p, n)
-
-        self.lnq=np.nan*np.ones(X.shape[0])
-
-        with Parallel(n_jobs=self.n_jobs) as parallel:
-            result_lnq = parallel(delayed(self.get_lnq)(X, i, T, p, n) for i in range(X.shape[0]))
-        for i,lnq in enumerate(result_lnq):
-            self.lnq[i] = lnq
-
-        return self
-    
-    def get_lnq(self, X: ArrayLike, i, T, p, n):
-        Sigma_0 = np.zeros((p,p))
-        result_denominator = 0
-        for t in range(T):
-            Sigma_t = n*X[i,t]
-            Sigma_0 = Sigma_0 + Sigma_t
-            result_denominator = result_denominator + np.log(np.abs(np.linalg.det(Sigma_t)))
-        return n*(p*T*np.log(T) + result_denominator - T*np.log(np.abs(np.linalg.det(Sigma_0))))
-        
-        return n*(p*T*np.log(T) + result_denominator - T*np.log(np.abs(np.linalg.det(Sigma_0))))
+        (N, p, T) = X.shape
+        pass
     
     def transform(self, X: ArrayLike):
-        return self.lnq
+        pass
 
     def predict(self, X: ArrayLike):
-        chi2 = scipy.stats.chi2.cdf
-        T, p, n = self.parameters_predict
-        f = (T-1)*(p**2)
-        rho = 1 - (2*p**2-1)/(6*(T-1)*p)*(T/n-1/(n*T))
-        omega_2 = (p**2)*(p**2-1)/(24*rho**2)*(T/(n**2)-1/(n*T)**2) -\
-                (p**2)*(T-1)/4 * (1 - 1/rho)**2
-        Z = -2*rho*self.lnq
-        return chi2(Z, df=f) + omega_2*(chi2(Z, df=f+4) - chi2(Z, df=f))
+        pass
 
     def fit_transform(self, X: ArrayLike, y=None):
         return self.fit(X).transform(X)
