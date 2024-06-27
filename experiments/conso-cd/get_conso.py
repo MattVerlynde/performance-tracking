@@ -82,7 +82,7 @@ def filter_time(df,time_path):
         df_inter = df.loc[t0 <= df_time].loc[df_time < t1] 
         # print(df_inter)
         df_list.append(df_inter)
-        
+     
     return df_list
 
 def get_integral(t, y, d):
@@ -144,7 +144,7 @@ def get_score(df_list,time_path):
             if i_df == 0:
                 d = integral/T
             elif i_df > 1:
-                list_integrals_var.append(integral)
+                list_integrals_var.append(integral/1e9)
             i_df += 1
         list_integrals.append(list_integrals_var)
         i_var += 1
@@ -168,10 +168,10 @@ if __name__ == "__main__":
 
     tab_results = make_table(results)
 
-    list_integrals = get_score(tab_results,times)
+    list_integrals, list_durations = get_score(tab_results,times)
     # print(list_integrals)
 
-    params = ["CPU", "Memory", "Energy", "Temperature", "Reads"]
+    params = ["CPU", "Memory", "Energy", "Temperature", "Reads", "Duration"]
     for i in range(len(list_integrals)):
         param = params[i]
         list_val = list_integrals[i]

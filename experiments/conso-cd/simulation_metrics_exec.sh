@@ -7,7 +7,7 @@ touch $2
 t0=$(date -u +%Y-%m-%dT%T.%9NZ)
 echo ${t0} >> $2
 
-sleep 10
+sleep 1
 
 echo $(date -u +%Y-%m-%dT%T.%9NZ) >> $2
 

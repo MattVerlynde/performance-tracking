@@ -20,6 +20,7 @@ from scipy import integrate
 from skimage.metrics import structural_similarity
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
 
 from get_stats import get_stats
 
@@ -45,6 +46,7 @@ def analyse_stats(output):
     data = pd.read_csv(output, header=0)
     n = data.shape[0] # nb individus
     p = data.shape[1] # nb variables
+    print(f"Nombre d'individus: {n}, Nombre de variables: {p}")
 
     scaler = MinMaxScaler()
     data_scaled = pd.DataFrame(scaler.fit_transform(data))
@@ -72,18 +74,26 @@ def analyse_stats(output):
     coordvar = pd.DataFrame({'id': data.columns, 'COR_1': corvar[:,0], 'COR_2': corvar[:,1], 'COR_3': corvar[:,2]})
 
     ccircle = []
-    eucl_dist = []
+    eucl_dist1 = []
+    eucl_dist2 = []
     for i in range(len(data_scaled.T)):
         if np.std(data_scaled.T.iloc[i]) == 0:
             corr1 = 0
             corr2 = 0
+            corr3 = 0
         else:
             corr1 = np.corrcoef(data_scaled.T.iloc[i],data_pca[:,0])[0,1]
             corr2 = np.corrcoef(data_scaled.T.iloc[i],data_pca[:,1])[0,1]
-        ccircle.append((corr1, corr2))
-        eucl_dist.append(np.sqrt(corr1**2 + corr2**2))
+            corr3 = np.corrcoef(data_scaled.T.iloc[i],data_pca[:,2])[0,1]
+        ccircle.append((corr1, corr2, corr3))
+        eucl_dist1.append(np.sqrt(corr1**2 + corr2**2))
+        eucl_dist2.append(np.sqrt(corr2**2 + corr3**2))
 
-    return eig, data_scaled, data_pca, coordvar, ccircle, eucl_dist
+    tsne = TSNE(random_state=42)
+    data_tsne = tsne.fit_transform(data_scaled)
+    print(f"t-SNE KL divergence: {tsne.kl_divergence_}")
+
+    return eig, data, data_pca, data_tsne, tsne.kl_divergence_, coordvar, ccircle, eucl_dist1, eucl_dist2
 
 
 if __name__ == "__main__":
@@ -99,7 +109,7 @@ if __name__ == "__main__":
 
     get_stats(results, times, args.storage_path, args.query).to_csv(output, index=False)
     
-    eig,  data, data_pca, coordvar, ccircle, eucl_dist = analyse_stats(output)
+    eig,  data, data_pca, data_tsne, tsne_div, coordvar, ccircle, eucl_dist1, eucl_dist2 = analyse_stats(output)
 
     fig = px.scatter(data_pca, x=0, y=1, 
         title=f"Premier plan factoriel ({np.sum(eig['% variance expliquée'][0:1])})", 

@@ -22,6 +22,19 @@ from skimage.metrics import structural_similarity
 from get_conso import make_table, query_data, filter_time, get_score 
 from get_perf import get_perf
 
+def get_time(times):
+    """
+    """
+    durations = []
+    with open(times, 'r') as file:
+        time_list = file.read().split('\n')
+    for i in range(2,len(time_list)-2):
+        t0, t1 = pd.to_datetime(time_list[i]).value, pd.to_datetime(time_list[i+1]).value
+        durations.append((t1-t0)/1e9)
+    return durations
+
+
+
 def get_stats(results, times, storage_path, query=True):
     """Function to get the statistics from the results and the performance metrics.
     
@@ -69,14 +82,14 @@ def get_stats(results, times, storage_path, query=True):
     stats["AUC"] = pd.DataFrame(list_auc)
     stats["SSIM"] = pd.DataFrame(list_ssim)
 
+    stats["Duration"] = pd.DataFrame(get_time(times))
+
     list_carbon = []
     for file in os.listdir(os.path.join(os.path.dirname(results), "codecarbon")):
         result = os.path.join(os.path.dirname(results), "codecarbon", file)
         carbon = pd.read_csv(result, header=0)["emissions"].values[-1]
         list_carbon.append(carbon)
         
-    stats["AUC"] = pd.DataFrame(list_auc)
-    stats["SSIM"] = pd.DataFrame(list_ssim)
     stats["Emissions"] = pd.DataFrame(list_carbon)
 
     return stats

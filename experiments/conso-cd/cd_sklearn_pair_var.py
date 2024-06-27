@@ -134,22 +134,97 @@ class Covariance(BaseEstimator, TransformerMixin):
 class RobustChangeDetection(BaseEstimator, TransformerMixin):
     """Test for change detection using the covariance matrix of the SAR image."""
 
-    def __init__(self, ENL: int, n_jobs: int = 1, tol=: float = 0.0001, iter_max: int = 20):
-        self.n_jobs = n_jobs
-        self.ENL = ENL
-        self.tol = tol
-        self.iter_max = iter_max
+    def __init__(self, window_size: int, n_jobs_cov: int = 10, return_count: bool = False, threshold: float = 0.95):
+        self.window_size=window_size
+        self.ENL = window_size**2
+        self.threshold = threshold
+        self.return_count = return_count
+        self.n_jobs_cov = n_jobs_cov
 
-    def fit(self, X: ArrayLike, y=None):
-        (N, p, T) = X.shape
-        pass
+    def q(Sigma, X):
+        return X.conj().T@np.linalg.inv(Sigma)@X
+        
+
+    def fit(self, path: str, X=None, y=None):
+        list_images = os.listdir(path)
+        sum_covar_j_minus_1 = 0
+        sum_covar_j = 0
+        shape = np.load(os.path.join(path, list_images[0])).shape
+        p = shape[2]
+        n = self.ENL
+        T = len(list_images)
+        self.parameters_predict = (T, p, n)
+        
+        self.change_count = 0
+        
+        self.lnq = 0
+
+        # Pipelines definition
+        pipeline = Pipeline([
+            ('sliding_window', SlidingWindowVectorize(window_size=self.window_size)),
+            ('covariances', Covariance(n_jobs=self.n_jobs_cov))
+            ],
+            verbose=False)
+        
+        image = DataLoading(os.path.join(path, list_images[0])).fit_transform().reshape((shape[0], shape[1], shape[2], 1))
+        covar_j = pipeline.fit_transform(image).reshape((-1, p, p))
+
+        for j in range(2,T+1):
+            j_minus_1 = j-1
+
+            # Load data
+            image = DataLoading(os.path.join(path, list_images[j-1])).fit_transform().reshape((shape[0], shape[1], shape[2], 1))
+            
+            covar_j_minus_1 = covar_j
+            covar_j = pipeline.fit_transform(image).reshape((-1, p, p))
+            sum_covar_j_minus_1 = sum_covar_j_minus_1 + covar_j_minus_1
+            sum_covar_j = sum_covar_j_minus_1 + covar_j
+            
+
+            self.lnRj = n*(
+                p*(j*np.log(j) - j_minus_1*np.log(j_minus_1)) +
+                  j_minus_1*np.log(np.abs(np.linalg.det(sum_covar_j_minus_1))) +
+                  np.log(np.abs(np.linalg.det(covar_j))) - 
+                  j*np.log(np.abs(np.linalg.det(sum_covar_j)))
+                  ) 
+            
+            if self.return_count:
+                f = p**2
+                rhoj = 1 - (2*p**2 - 1)/(6*p*n) * (1 + 1/(j*j_minus_1))
+                omega_2j = -p**2/4 * (1 - 1/rhoj)**2 + 1/(24*n**2)*p**2*(p**2-1)*(1 + (2*j-1)/(j**2*j_minus_1**2))*1/rhoj**2
+                
+                chi2 = scipy.stats.chi2.cdf
+                Z = -2*rhoj*self.lnRj
+                
+                pvalue = chi2(Z, df=f) + omega_2j * (chi2(Z, df=f+4) - chi2(Z, df=f))
+                
+                self.change_count = self.change_count + (pvalue > self.threshold)
+
+            self.lnq += self.lnRj
+
+            # labels = LabelsToImage(shape[0], shape[1], window_size).fit_transform(
+            #             pvalue,
+            #             plot=plot
+            #     )
+ 
+        return self
     
     def transform(self, X: ArrayLike):
-        pass
-
+        return self.lambda_
+    
     def predict(self, X: ArrayLike):
-        pass
-
+        # if self.return_count:
+        #     return self.change_count
+        # chi2 = scipy.stats.chi2.cdf
+        # T, p, n = self.parameters_predict
+        # f = (T-1)*(p**2)
+        # rho = 1 - (2*p**2-1)/(6*(T-1)*p)*(T/n-1/(n*T))
+        # omega_2 = (p**2)*(p**2-1)/(24*rho**2)*(T/(n**2)-1/(n*T)**2) -\
+        #         (p**2)*(T-1)/4 * (1 - 1/rho)**2
+        # Z = -2*rho*self.lnq
+        # return chi2(Z, df=f) + omega_2*(chi2(Z, df=f+4) - chi2(Z, df=f))
+        return self.lambda_
+    
     def fit_transform(self, X: ArrayLike, y=None):
         return self.fit(X).transform(X)
     
@@ -402,6 +477,10 @@ if __name__ == "__main__":
         ('rj_test', PairwiseRjTest(window_size=window_size, n_jobs_cov=n_jobs_cov,return_count=False, threshold=0.95))
         ],
         verbose=False)
+    # pipeline = Pipeline([
+    #     ('robust_change_detection', RobustChangeDetection(window_size=window_size, n_jobs_cov=n_jobs_cov, tol=0.0001, iter_max=20))
+    #     ],
+    #     verbose=False)
         
     pipelines = [pipeline]
     name = 'pairwise_change_detection'
