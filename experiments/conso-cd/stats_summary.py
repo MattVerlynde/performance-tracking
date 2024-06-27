@@ -34,28 +34,51 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--storage_path", type=str, default="simulations/results_qanat/conso")
     parser.add_argument("--id", type=int, required=True, nargs='+')
+    parser.add_argument("--grouped", "-g", type=bool, default=False)
     parser.add_argument("--query", "-q", type=bool, default=True)
     args = parser.parse_args()
 
     output_df = pd.DataFrame()
-    for id in args.id:
-        results = os.path.join(args.storage_path, f"run_{id}", "results.txt")
-        times = os.path.join(args.storage_path, f"run_{id}", "times.txt")
+
+    if not args.grouped:
+        for id in args.id:
+            results = os.path.join(args.storage_path, f"run_{id}", "results.txt")
+            times = os.path.join(args.storage_path, f"run_{id}", "times.txt")
 
 
-        with open(os.path.join(args.storage_path, f"run_{id}", "group_info.yaml"), 'r') as f:
-            paramYaml = yaml.load(f, Loader=yaml.FullLoader)
+            with open(os.path.join(args.storage_path, f"run_{id}", "group_info.yaml"), 'r') as f:
+                paramYaml = yaml.load(f, Loader=yaml.FullLoader)
 
-        window = int(paramYaml['parameters']['--window'])
-        cores = int(paramYaml['parameters']['--cores'])
-        output_df_i = get_stats(results, times, os.path.join(args.storage_path, f"run_{id}"), args.query)
-        output_df_i["Window size"] = window*np.ones(len(output_df_i))
-        output_df_i["Threads"] = cores*np.ones(len(output_df_i))
+            window = int(paramYaml['parameters']['--window'])
+            cores = int(paramYaml['parameters']['--cores'])
+            output_df_i = get_stats(results, times, os.path.join(args.storage_path, f"run_{id}"), args.query)
+            output_df_i["Window size"] = window*np.ones(len(output_df_i))
+            output_df_i["Threads"] = cores*np.ones(len(output_df_i))
 
-        # T = int(paramYaml['parameters']['--image'][-7:-5])
-        # output_df_i["T"] = T*np.ones(len(output_df_i))
-        
-        output_df = pd.concat([output_df, output_df_i], ignore_index=True)
+            # T = int(paramYaml['parameters']['--image'][-7:-5])
+            # output_df_i["T"] = T*np.ones(len(output_df_i))
+
+            output_df = pd.concat([output_df, output_df_i], ignore_index=True)
+    else:
+        list_group = os.listdir(args.storage_path, f"run_{id}")
+        for id_group,group in enumerate(list_group):
+            results = os.path.join(args.storage_path, f"run_{id}", group, "results.txt")
+            times = os.path.join(args.storage_path, f"run_{id}", group, "times.txt")
+
+            with open(os.path.join(args.storage_path, f"run_{id}", group, "group_info.yaml"), 'r') as f:
+                paramYaml = yaml.load(f, Loader=yaml.FullLoader)
+
+            window = int(paramYaml['parameters']['--window'])
+            cores = int(paramYaml['parameters']['--cores'])
+            output_df_i = get_stats(results, times, os.path.join(args.storage_path, f"run_{id}", group), args.query)
+            output_df_i["Window size"] = window*np.ones(len(output_df_i))
+            output_df_i["Threads"] = cores*np.ones(len(output_df_i))
+
+            # T = int(paramYaml['parameters']['--image'][-7:-5])
+            # output_df_i["T"] = T*np.ones(len(output_df_i))
+
+            output_df = pd.concat([output_df, output_df_i], ignore_index=True)
+
     
     output = os.path.join(args.storage_path, f"output_all.csv")
     output_df.to_csv(output, index=False)
