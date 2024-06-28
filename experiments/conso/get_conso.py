@@ -26,7 +26,7 @@ def query_data(result_file, time_file):
         Query to apply to the database
     """
 
-    command = f"bash performance-tracking/experiments/conso-cd/query_influx.sh {time_file} {result_file}"
+    command = f"bash performance-tracking/experiments/conso/query_influx.sh {time_file} {result_file}"
     subprocess.run(command, shell=True)
     return
     

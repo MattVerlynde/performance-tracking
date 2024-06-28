@@ -32,7 +32,7 @@ from sklearn.metrics.pairwise import euclidean_distances
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--storage_path", type=str, default="simulations/results_qanat/conso")
+    parser.add_argument("--storage_path", type=str, default="simulations/results_qanat/conso-change")
     parser.add_argument("--id", type=int, required=True, nargs='+')
     parser.add_argument("--grouped", "-g", type=bool, default=False)
     parser.add_argument("--query", "-q", type=bool, default=True)
@@ -60,7 +60,8 @@ if __name__ == "__main__":
 
             output_df = pd.concat([output_df, output_df_i], ignore_index=True)
     else:
-        list_group = os.listdir(args.storage_path, f"run_{id}")
+        id = args.id[0]
+        list_group = sorted(os.listdir(os.path.join(args.storage_path, f"run_{id}")))[:-1]
         for id_group,group in enumerate(list_group):
             results = os.path.join(args.storage_path, f"run_{id}", group, "results.txt")
             times = os.path.join(args.storage_path, f"run_{id}", group, "times.txt")
@@ -88,33 +89,33 @@ if __name__ == "__main__":
     print(coordvar)
 
     
-    # with plt.style.context(('seaborn-v0_8-whitegrid')):
-    #     fig, axs = plt.subplots(1,2,figsize=(16, 8))
-    #     for iax,ax in enumerate(axs):
-    #         eucl_dist = [eucl_dist1, eucl_dist2][iax]
-    #         for i,j in enumerate(eucl_dist):
-    #             # arrow_col = plt.cm.YlOrRd((eucl_dist[i] - np.array(eucl_dist).min())/\
-    #             #         (np.array(eucl_dist).max() - np.array(eucl_dist).min()) )
-    #             arrow_col = plt.cm.tab20(i)
-    #             ax.arrow(0,0, # Arrows start at the origin
-    #                     ccircle[i][iax],  #0 for PC1
-    #                     ccircle[i][iax+1],  #1 for PC2
-    #                     lw = 2, # line width
-    #                     length_includes_head=True, 
-    #                     color = arrow_col,
-    #                     fc = arrow_col,
-    #                     head_width=0.05,
-    #                     head_length=0.05)
-    #             ax.text(ccircle[i][iax],ccircle[i][iax+1], output_df.columns[i],fontsize=10)
-    #         # Draw the unit circle, for clarity
-    #         circle = Circle((0, 0), 1, facecolor='none', edgecolor='k', linewidth=1, alpha=0.5)
-    #         ax.add_patch(circle)
-    #         ax.set_aspect('equal')
-    #         ax.set_xlabel(f"PCA {iax+1}")
-    #         ax.set_ylabel(f"PCA {iax+2}")
-    # plt.tight_layout()
-    # plt.show()
-    # fig.savefig(os.path.join(args.storage_path, "pca_circle.png"))
+    with plt.style.context(('seaborn-v0_8-whitegrid')):
+        fig, axs = plt.subplots(1,2,figsize=(16, 8))
+        for iax,ax in enumerate(axs):
+            eucl_dist = [eucl_dist1, eucl_dist2][iax]
+            for i,j in enumerate(eucl_dist):
+                # arrow_col = plt.cm.YlOrRd((eucl_dist[i] - np.array(eucl_dist).min())/\
+                #         (np.array(eucl_dist).max() - np.array(eucl_dist).min()) )
+                arrow_col = plt.cm.tab20(i)
+                ax.arrow(0,0, # Arrows start at the origin
+                        ccircle[i][iax],  #0 for PC1
+                        ccircle[i][iax+1],  #1 for PC2
+                        lw = 2, # line width
+                        length_includes_head=True, 
+                        color = arrow_col,
+                        fc = arrow_col,
+                        head_width=0.05,
+                        head_length=0.05)
+                ax.text(ccircle[i][iax],ccircle[i][iax+1], output_df.columns[i],fontsize=10)
+            # Draw the unit circle, for clarity
+            circle = Circle((0, 0), 1, facecolor='none', edgecolor='k', linewidth=1, alpha=0.5)
+            ax.add_patch(circle)
+            ax.set_aspect('equal')
+            ax.set_xlabel(f"PCA {iax+1}")
+            ax.set_ylabel(f"PCA {iax+2}")
+    plt.tight_layout()
+    plt.show()
+    fig.savefig(os.path.join(args.storage_path, "pca_circle.png"))
 
     # Plot PCA representation in correlation circle
 
