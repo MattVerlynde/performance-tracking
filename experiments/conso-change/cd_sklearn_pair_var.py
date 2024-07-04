@@ -486,7 +486,7 @@ class PairwiseRjTest(BaseEstimator, TransformerMixin):
         return lnR, sum_covar_j
     
     def transform(self, X: ArrayLike):
-        return self.lnQ
+        return (-1)*self.lnQ
     
     def predict(self, X: ArrayLike):
         chi2 = scipy.stats.chi2.cdf

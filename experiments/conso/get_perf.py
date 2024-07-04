@@ -87,7 +87,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     for file in os.listdir(os.path.join(args.storage_path, "output")):
-        result = (-1)*np.load(os.path.join(args.storage_path, "output", file))
+        result = np.load(os.path.join(args.storage_path, "output", file))
 
         tpr, fpr, auc, ssim = get_perf(args.storage_path, result)
             
