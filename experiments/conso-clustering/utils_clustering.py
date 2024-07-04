@@ -97,17 +97,21 @@ def compute_clustering(pipelines_names, pipelines, data):
 
     print(f"\nStarting clustering with pipelines: {pipelines_names}")
     results = {}
+    covmats = {}
     for pipeline_name, pipeline in zip(pipelines_names, pipelines):
         print("-"*60)
         print(f"Pipeline: {pipeline_name}")
         pipeline.fit(data)
         preds = pipeline.named_steps["kmeans"].labels_
-        covmats = pipeline.named_steps["covariances"].transform(data)
+        covmats[pipeline_name] = pipeline.named_steps["sliding_window"].transform(data)
+        covmats[pipeline_name] = pipeline.named_steps["covariances"].transform(covmats[pipeline_name])
+        
+        print(f"Covmat shape: {covmats[pipeline_name].shape}")
         results[pipeline_name] = \
             pipeline.named_steps["sliding_window"].inverse_predict(preds)
         print("-"*60)
     print("Done")
-    return results
+    return results, covmats
 
 def clustering(data_path, n_clusters, window, small_dataset, estimator, n_jobs, max_iter, storage_path, number_run):
 
@@ -115,12 +119,17 @@ def clustering(data_path, n_clusters, window, small_dataset, estimator, n_jobs, 
 
     pipelines, pipelines_names = make_pipelines(window, estimator, n_clusters, n_jobs,  max_iter)
 
-    results = compute_clustering(pipelines_names, pipelines, data)
+    results, covmats = compute_clustering(pipelines_names, pipelines, data)
 
+    os.makedirs(os.path.join(storage_path, "output"), exist_ok=True)
     for pipeline_name, labels_pred in results.items():
         np.save(os.path.join(storage_path, "output", f"{pipeline_name}_clustering_results_{number_run}.npy"), labels_pred)
+    
+    os.makedirs(os.path.join(storage_path, "covar"), exist_ok=True)
+    for pipeline_name, cov in covmats.items():
+        np.save(os.path.join(storage_path, "covar", f"{pipeline_name}_covmats_{number_run}.npy"), cov)
 
-    return results
+    return results, covmats
 
 
 ###############################################################################

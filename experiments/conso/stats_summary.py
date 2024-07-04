@@ -62,7 +62,7 @@ if __name__ == "__main__":
     else:
         id = args.id[0]
         list_group = sorted(os.listdir(os.path.join(args.storage_path, f"run_{id}")))[:-1]
-        for id_group,group in enumerate(list_group):
+        for group in list_group:
             results = os.path.join(args.storage_path, f"run_{id}", group, "results.txt")
             times = os.path.join(args.storage_path, f"run_{id}", group, "times.txt")
 
@@ -124,7 +124,11 @@ if __name__ == "__main__":
         eucl_dist = [eucl_dist1, eucl_dist2][iax]
         for i,j in enumerate(eucl_dist):
             fig.add_trace(go.Scatter(x=[0, ccircle[i][0]], y=[0, ccircle[i][iax+1]], name = output_df.columns[i], mode='lines+markers'), row=1, col=iax+1)
-            # Add circles
+            #fixed color by variable
+            fig.for_each_trace(lambda trace: trace.update(line=dict(color='red') if trace.name == 'AUC' or trace.name == 'SSIM' else dict(color='blue'),
+                marker=dict(color='red') if trace.name == 'AUC' or trace.name == 'SSIM' else dict(color='blue')))
+
+        # Add circles
         fig.add_shape(type="circle",
             xref="x", yref="y",
             x0=-1, y0=-1, x1=1, y1=1,
@@ -157,6 +161,7 @@ if __name__ == "__main__":
 
     # Plot data in t-SNE representation
 
+    print(data_tsne.shape)
     fig = px.scatter(pd.DataFrame.join(pd.DataFrame(data_tsne), data), color="AUC", x=0, y=1, 
         title=f"t-SNE visualization (KL divergence: {tsne_div})", 
         labels={0: "Dimension 1", 1: "Dimension 2"},

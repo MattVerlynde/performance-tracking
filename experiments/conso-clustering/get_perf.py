@@ -16,6 +16,7 @@ import numpy as np
 from sklearn import metrics
 
 from utils_clustering import load_data
+from pyriemann.utils.mean import mean_riemann
 
 import argparse
 
@@ -24,9 +25,27 @@ import argparse
 # Plot data and results
 # ---------
 
-def get_scores(data_visualization, result):
+def get_scores(storage_path):
 
-    return metrics.silhouette_score(data_visualization, result, metric='euclidean')
+    with open(os.path.join(storage_path, "group_info.yaml"), 'r') as f:
+        paramYaml = yaml.load(f, Loader=yaml.FullLoader)
+
+    window = int(paramYaml['parameters']['--window'])
+
+    list_covar = sorted(os.listdir(os.path.join(storage_path, "covar")))
+    list_cluster = sorted(os.listdir(os.path.join(storage_path, "output")))
+    for file_covar, file_cluster in zip(list_covar, list_cluster):
+        covmat = np.load(os.path.join(storage_path, "covar", file_covar))
+        result = np.load(os.path.join(storage_path, "output", file_cluster))
+
+        covmat = (covmat[(window-1)//2:-(window-1)//2, (window-1)//2:-(window-1)//2, :])
+    
+    print(result.shape)
+    print(covmat.shape)
+    scores = {}
+    scores["silhouette"] = metrics.silhouette_score(covmat, result)
+
+    return scores
 
 ###############################################################################
 # References
@@ -48,19 +67,7 @@ if __name__ == "__main__":
     parser.add_argument("--storage_path", type=str, required=True)
     args = parser.parse_args()
 
-    with open(os.path.join(args.storage_path, "group_info.yaml"), 'r') as f:
-        paramYaml = yaml.load(f, Loader=yaml.FullLoader)
-
-    data_path = paramYaml['parameters']['--image'] + ".npy"
-    window = int(paramYaml['parameters']['--window'])
-    small_dataset = bool(paramYaml['parameters']['--small_dataset'])
-    n_clusters = int(paramYaml['parameters']['--n_clusters'])
-
-    data, data_visualization, X_image, Y_image, X_res, Y_res = load_data(data_path, n_clusters, window, small_dataset)
-    for file in os.listdir(os.path.join(args.storage_path, "output")):
-        result = np.load(os.path.join(args.storage_path, "output", file))
-
-        score = get_scores(data_visualization, result)
+    score = get_scores(args.storage_path)
     
     print("Done")
     print(f"Score is {score}")

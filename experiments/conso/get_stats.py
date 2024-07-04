@@ -75,7 +75,7 @@ def get_stats(results, times, storage_path, query=True):
     list_ssim = []
     for file in os.listdir(os.path.join(os.path.dirname(results), "output")):
         result = np.load(os.path.join(os.path.dirname(results), "output", file))
-        tpr, fpr, auc, ssim, acc = get_perf(storage_path, result)
+        tpr, fpr, auc, ssim = get_perf(storage_path, result)
         list_auc.append(auc)
         list_ssim.append(ssim)
     
