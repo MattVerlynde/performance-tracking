@@ -20,7 +20,7 @@ from sklearn import metrics
 from skimage.metrics import structural_similarity
 
 
-def get_perf(storage_path, result):
+def get_perf_change(storage_path, result):
     """Function to 
     
     Parameters
@@ -53,31 +53,18 @@ def get_perf(storage_path, result):
     gapx, gapy = int((x_ref - x)/2), int((y_ref - y)/2)
     reference = reference[gapx:(x_ref-gapx), gapy:(y_ref-gapy)]
 
-    # tpr = []
-    # fpr = []
-    # acc = []
     ref_thresh = np.where(reference != 0, 1, 0)
-    # max_val = np.max(result)
-    # for t in np.linspace(0, max_val, 101):
-    #     result_thresh = np.where(result >= t, 1, 0)
-    #     TP = np.sum(np.logical_and(ref_thresh == 1, result_thresh == 1))
-    #     FP = np.sum(np.logical_and(ref_thresh == 0, result_thresh == 1))
-    #     FN = np.sum(np.logical_and(ref_thresh == 1, result_thresh == 0))
-    #     TN = np.sum(np.logical_and(ref_thresh == 0, result_thresh == 0))
-    #     # print(f"TP: {TP}, FP: {FP}, FN: {FN}, TN: {TN}")
-    #     tpr.append(TP / (TP + FN))
-    #     fpr.append(FP / (FP + TN))
-    #     acc.append((TP + TN) / (TP + TN + FP + FN))
-    
-    #Calculating AUC
-    # auc = abs(integrate.trapezoid(tpr, fpr))
 
     fpr, tpr, threshold = metrics.roc_curve(y_true=ref_thresh.flatten(), y_score=result.flatten())
     auc = metrics.auc(fpr, tpr)
 
     ssim = structural_similarity(ref_thresh, result, data_range=1.0)
 
-    return tpr, fpr, auc, ssim
+    perf = {}
+    perf["AUC"] = auc
+    perf["SSIM"] = ssim
+
+    return tpr, fpr, perf
 
 if __name__ == "__main__":
 
@@ -97,8 +84,6 @@ if __name__ == "__main__":
         if args.plot:
             if not os.path.exists(os.path.join(args.storage_path, "plots")):
                 os.mkdir(os.path.join(args.storage_path, "plots"))
-                os.mkdir(os.path.join(args.storage_path, "plots/accuracy"))
-                os.mkdir(os.path.join(args.storage_path, "plots/roc"))
             fig = px.scatter(x=fpr, y=tpr, title="ROC Curve", width=600, height=600)
             fig.add_trace(px.line(x=[0, 1], y=[0, 1], color_discrete_sequence=["rgb(0, 0, 0)"]).data[0])
             fig.update_xaxes(title_text="False Positive Rate")
@@ -114,13 +99,6 @@ if __name__ == "__main__":
                 color="rgb(0, 0, 0)"
                 )
             )
-            fig.write_html(os.path.join(args.storage_path, "plots/roc", "roc_curve_" + file[25:-4] + ".html"), include_mathjax='cdn')
-            fig.write_image(os.path.join(args.storage_path, "plots/roc", "roc_curve_" + file[25:-4] + ".png"))
+            fig.write_html(os.path.join(args.storage_path, "plots", "roc_curve_" + file[25:-4] + ".html"), include_mathjax='cdn')
+            fig.write_image(os.path.join(args.storage_path, "plots", "roc_curve_" + file[25:-4] + ".png"))
             fig.show()
-
-            # fig = px.line(x=np.linspace(0, 1, 101), y=acc, title="Accuracy", width=600, height=600)
-            # fig.update_xaxes(title_text="Threshold")
-            # fig.update_yaxes(title_text="Accuracy")
-            # fig.write_html(os.path.join(args.storage_path, "plots/accuracy", "acc_curve_" + file[25:-4] + ".html"), include_mathjax='cdn')
-            # fig.write_image(os.path.join(args.storage_path, "plots/accuracy", "acc_curve_" + file[25:-4] + ".png"))
-            # fig.show()

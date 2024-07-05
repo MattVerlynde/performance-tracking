@@ -19,8 +19,11 @@ import plotly.express as px
 from scipy import integrate
 from skimage.metrics import structural_similarity
 
-from get_conso import make_table, query_data, filter_time, get_score 
-from get_perf import get_perf
+import sys
+sys.path.append('../')
+from conso.get_conso import make_table, query_data, filter_time, get_score 
+from conso_change.get_perf import get_perf_change
+from conso_clustering.get_perf import get_perf_clustering
 
 def get_time(times):
     """
@@ -71,17 +74,16 @@ def get_stats(results, times, storage_path, query=True):
         list_val = list_integrals[i]
         stats[param] = pd.DataFrame(list_val)
 
-    list_auc = []
-    list_ssim = []
+    df_perf = pd.DataFrame()
     for file in os.listdir(os.path.join(os.path.dirname(results), "output")):
         result = np.load(os.path.join(os.path.dirname(results), "output", file))
-        tpr, fpr, auc, ssim = get_perf(storage_path, result)
-        list_auc.append(auc)
-        list_ssim.append(ssim)
+        if "change" in storage_path:
+            perf = get_perf_change(storage_path, result)
+        elif "clustering" in storage_path:
+            perf = get_perf_clustering(storage_path)
+        df_perf = pd.concat([df_perf, pd.DataFrame(perf)], axis=0)
     
-    stats["AUC"] = pd.DataFrame(list_auc)
-    stats["SSIM"] = pd.DataFrame(list_ssim)
-
+    stats = pd.concat([stats, df_perf], axis=1)
     stats["Duration"] = pd.DataFrame(get_time(times))
 
     list_carbon = []

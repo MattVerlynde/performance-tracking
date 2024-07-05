@@ -16,7 +16,8 @@ import numpy as np
 from sklearn import metrics
 
 from utils_clustering import load_data
-from pyriemann.utils.mean import mean_riemann
+
+import plotly.express as px
 
 import argparse
 
@@ -25,25 +26,27 @@ import argparse
 # Plot data and results
 # ---------
 
-def get_scores(storage_path):
+def get_perf_clustering(storage_path):
 
     with open(os.path.join(storage_path, "group_info.yaml"), 'r') as f:
         paramYaml = yaml.load(f, Loader=yaml.FullLoader)
 
-    window = int(paramYaml['parameters']['--window'])
+    data_path = paramYaml['parameters']['--data_path']
+    n_clusters = int(paramYaml['parameters']['--n_clusters'])
+    window_size = int(paramYaml['parameters']['--window'])
 
-    list_covar = sorted(os.listdir(os.path.join(storage_path, "covar")))
+    data, data_visualization, X_image, Y_image, X_res, Y_res = load_data(data_path, n_clusters, window_size, small_dataset = True)
+    height, width, p = data.shape
+    w = window_size//2
+    data = np.real(data[w:height-w, w:width-w, :].reshape((-1, p)))
+
     list_cluster = sorted(os.listdir(os.path.join(storage_path, "output")))
-    for file_covar, file_cluster in zip(list_covar, list_cluster):
-        covmat = np.load(os.path.join(storage_path, "covar", file_covar))
+    for file_cluster in list_cluster:
         result = np.load(os.path.join(storage_path, "output", file_cluster))
-
-        covmat = (covmat[(window-1)//2:-(window-1)//2, (window-1)//2:-(window-1)//2, :])
-    
-    print(result.shape)
-    print(covmat.shape)
     scores = {}
-    scores["silhouette"] = metrics.silhouette_score(covmat, result)
+    scores["silhouette_score"] = metrics.silhouette_score(data, result.flatten())
+    scores["calinski_harabasz_score"] = metrics.calinski_harabasz_score(data, result.flatten())
+    scores["davies_bouldin_score"] = metrics.davies_bouldin_score(data, result.flatten())
 
     return scores
 
@@ -65,10 +68,12 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser()
     parser.add_argument("--storage_path", type=str, required=True)
+    parser.add_argument("--plot", type=bool, default=False)
     args = parser.parse_args()
 
-    score = get_scores(args.storage_path)
-    
+    scores = get_perf_clustering(args.storage_path)
+        
     print("Done")
-    print(f"Score is {score}")
+    print(f"Score is {scores}")
     print("End of the script")
+

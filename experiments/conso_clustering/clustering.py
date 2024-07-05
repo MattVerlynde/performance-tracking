@@ -7,7 +7,7 @@ import pandas as pd
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--image", '-i', type=str, default='/home/verlyndem/Data/Selection/Scene_1/Scene_1_0')
+    parser.add_argument("--image", '-i', type=str, default='/home/verlyndem/Data/Selection/Scene_1/Scene_1_0.npy')
     parser.add_argument("--window", '-w', type=int, required=True)
     parser.add_argument("--cores", '-c', type=float, required=True)
     parser.add_argument("--n_clusters", type=int, default=2)
@@ -17,7 +17,6 @@ if __name__ == "__main__":
 
     results_path = os.path.join(args.storage_path, "results.txt")
     times_path = os.path.join(args.storage_path, "times.txt")
-    data_path = args.image + ".npy"
 
     os.makedirs(os.path.join(args.storage_path, "output"), exist_ok=True)
 

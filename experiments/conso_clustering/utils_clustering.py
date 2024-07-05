@@ -93,77 +93,38 @@ def make_pipelines(window_size, estimator, n_clusters, n_jobs,  max_iter):
 # Perform clustering
 # ------------------
 
-def compute_clustering(pipelines_names, pipelines, data):
+def compute_clustering(pipeline_name, pipeline, data):
 
-    print(f"\nStarting clustering with pipelines: {pipelines_names}")
-    results = {}
-    covmats = {}
-    for pipeline_name, pipeline in zip(pipelines_names, pipelines):
-        print("-"*60)
-        print(f"Pipeline: {pipeline_name}")
-        pipeline.fit(data)
-        preds = pipeline.named_steps["kmeans"].labels_
-        covmats[pipeline_name] = pipeline.named_steps["sliding_window"].transform(data)
-        covmats[pipeline_name] = pipeline.named_steps["covariances"].transform(covmats[pipeline_name])
-        
-        print(f"Covmat shape: {covmats[pipeline_name].shape}")
-        results[pipeline_name] = \
-            pipeline.named_steps["sliding_window"].inverse_predict(preds)
-        print("-"*60)
+    print(f"\nStarting clustering with pipelines: {pipeline_name}")
+    print("-"*60)
+    print(f"Pipeline: {pipeline_name}")
+    pipeline.fit(data)
+    preds = pipeline.named_steps["kmeans"].labels_
+    results = \
+        pipeline.named_steps["sliding_window"].inverse_predict(preds)
+    print("-"*60)
     print("Done")
-    return results, covmats
+    return results
 
-def clustering(data_path, n_clusters, window, small_dataset, estimator, n_jobs, max_iter, storage_path, number_run):
+def clustering(data_path, n_clusters, window, small_dataset, estimator, n_jobs, max_iter, storage_path, number_run, riemann):
 
     data, data_visualization, X_image, Y_image, X_res, Y_res = load_data(data_path, n_clusters, window, small_dataset)
 
     pipelines, pipelines_names = make_pipelines(window, estimator, n_clusters, n_jobs,  max_iter)
 
-    results, covmats = compute_clustering(pipelines_names, pipelines, data)
+    if riemann:
+        pipeline = pipelines[1]
+        pipeline_name = pipelines_names[1]
+    else:
+        pipeline = pipelines[0]
+        pipeline_name = pipelines_names[0]
+    
+    results = compute_clustering(pipeline_name, pipeline, data)
 
     os.makedirs(os.path.join(storage_path, "output"), exist_ok=True)
-    for pipeline_name, labels_pred in results.items():
-        np.save(os.path.join(storage_path, "output", f"{pipeline_name}_clustering_results_{number_run}.npy"), labels_pred)
+    np.save(os.path.join(storage_path, "output", f"{number_run}.npy"), results)
     
-    os.makedirs(os.path.join(storage_path, "covar"), exist_ok=True)
-    for pipeline_name, cov in covmats.items():
-        np.save(os.path.join(storage_path, "covar", f"{pipeline_name}_covmats_{number_run}.npy"), cov)
-
-    return results, covmats
-
-
-###############################################################################
-# Plot data and results
-# ---------
-
-def plot_clustering(data_visualization, X_image, Y_image, X_ref, Y_ref, results, storage_path):
-
-    print("Plotting")
-    plot_value = 20*np.log10(np.sum(np.abs(data_visualization)**2, axis=2))
-    figure, ax = plt.subplots(figsize=(5, 5))
-    plt.pcolormesh(X_image, Y_image, plot_value, cmap="gray")
-    plt.colorbar()
-    ax.invert_yaxis()
-    plt.xlabel("Range (m)")
-    plt.ylabel("Azimuth (m)")
-    plt.title(r"SAR data: $20\log_{10}(x_{HH}^2 + x_{HV}^2 + x_{VV}^2$)")
-    plt.tight_layout()
-    figure.savefig(os.path.join(storage_path,"clustering_data.png"))
-
-
-    for pipeline_name, labels_pred in results.items():
-        figure, ax = plt.subplots(figsize=(5, 5))
-        plt.pcolormesh(X_res, Y_res, labels_pred, cmap="tab20b")
-        plt.xlim(X_image.min(), X_image.max())
-        plt.ylim(Y_image.min(), Y_image.max())
-        plt.title(f"Clustering with {pipeline_name}")
-        plt.colorbar()
-        ax.invert_yaxis()
-        plt.xlabel("Range (m)")
-        plt.ylabel("Azimuth (m)")
-        plt.tight_layout()
-        figure.savefig(os.path.join(storage_path,pipeline_name+"_clustering_results.png"))
-    plt.show()
+    return results
 
 ###############################################################################
 # References
@@ -191,11 +152,20 @@ if __name__ == "__main__":
     parser.add_argument("--estimator", type=str, default="scm")
     parser.add_argument("--n_clusters", type=int, default=4)
     parser.add_argument("--number_run", "-n", type=str, default="")
+    parser.add_argument("--riemann", type=int, default=0)
+
     args = parser.parse_args()
 
-    clustering(args.data_path, args.n_clusters, args.window, args.small_dataset, args.estimator, args.n_jobs, args.max_iter, args.storage_path, args.number_run)
+    from codecarbon import OfflineEmissionsTracker
+    
+    DIR_CARBON = os.path.join(args.storage_path,"codecarbon")
+    os.makedirs(DIR_CARBON, exist_ok=True)
+    tracker = OfflineEmissionsTracker(country_iso_code="FRA", output_dir=DIR_CARBON, output_file=f"emissions{args.number_run}.csv")
+    tracker.start()
 
-    # plot_clustering(data_visualization, X_image, Y_image, X_res, Y_res, results, args.storage_path)
+    clustering(args.data_path, args.n_clusters, args.window, args.small_dataset, args.estimator, args.n_jobs, args.max_iter, args.storage_path, args.number_run, args.riemann)
+
+    tracker.stop()
     
     print("Done")
     print(f"Results saved in {args.storage_path}")

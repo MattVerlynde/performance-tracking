@@ -169,7 +169,7 @@ if __name__ == "__main__":
     
     fig.write_html(os.path.join(args.storage_path, "tsne.html"), include_mathjax='cdn')
 
-    # Plot PCA representation in correlation circle
+    # Plot AUC vs Energy
 
     fig = px.scatter(data.loc[data["Energy"]!=0], x="AUC", y="Energy", 
         title=f"Energy consumption vs AUC",

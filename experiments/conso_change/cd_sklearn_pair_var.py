@@ -31,6 +31,7 @@ from joblib import Parallel, delayed
 import argparse
 import warnings
 
+from helpers.multivariate_images_tool import sliding_windows_treatment_image_time_series_parallel
 
 
 
@@ -170,7 +171,7 @@ class RobustChangeDetection(BaseEstimator, TransformerMixin):
                 * iteration = number of iterations til convergence """
 
         # Initialisation
-        (p,N) = 𝐗.shape
+        (p, N) = 𝐗.shape
         δ = np.inf # Distance between two iterations
         𝚺 = np.eye(p) # Initialise estimate to identity
         iteration = 0
@@ -245,7 +246,7 @@ class RobustChangeDetection(BaseEstimator, TransformerMixin):
             warnings.warn('Recursive algorithm did not converge')
 
         return (𝚺, δ, iteration)
-
+    
     def scale_and_shape_equality_robust_statistic(self, 𝐗, tol, iter_max, scale):
         """ GLRT test for testing a change in the scale or/and shape of 
             a deterministic SIRV model.
@@ -276,7 +277,7 @@ class RobustChangeDetection(BaseEstimator, TransformerMixin):
 
             # Computing determinant add adding it to log_denominator_determinant_terms
             log_denominator_determinant_terms = log_denominator_determinant_terms + \
-                                                N*np.log(np.abs(np.linalg.det(𝚺_t)))
+                N*np.log(np.abs(np.linalg.det(𝚺_t)))
 
             # Computing texture estimation
             𝛕_0 =  𝛕_0 + np.diagonal(𝐗[:,:,t].conj().T@i𝚺_0@𝐗[:,:,t]) / T
@@ -295,42 +296,65 @@ class RobustChangeDetection(BaseEstimator, TransformerMixin):
             log_numerator_quadtratic_terms - log_denominator_quadtratic_terms)
 
         return λ 
+        
+    def get_lambda(self, i_px: int, list_images: list, path: str, tol: float, iter_max: int, scale: str):
+        
+        px_value = []
+        for i in range(len(list_images)):
+            image = np.load(os.path.join(path, list_images[i]))
+            if i == 0:
+                height, width, p = image.shape
+                i_px_h = i_px % (height - 2*(self.window_size//2))
+                i_px_w = i_px % (width - 2*(self.window_size//2))
+            image = image[i_px_h:i_px_h+self.window_size, i_px_w:i_px_w+self.window_size]
+            image = image.reshape((-1, p))
+            px_value.append(image)
+        px_value = np.stack(px_value, axis=-1)
+        px_value = np.transpose(px_value, (1,0,2))
 
+        lambda_i = self.scale_and_shape_equality_robust_statistic(
+            px_value, tol, iter_max, scale)
+
+        return lambda_i
+    
     def fit(self, path: str, X=None, y=None):
         list_images = os.listdir(path)
-        image = np.load(os.path.join(path, list_images[0]))
-        shape = image.shape
-        p = shape[2]
 
-        # Pipelines definition
-        sliding_window = SlidingWindowVectorize(window_size=self.window_size)
+        # image = np.load(os.path.join(path, list_images[0]))
+        # shape = image.shape
+        # p = shape[2]
+
+        # # Pipelines definition
+        # sliding_window = SlidingWindowVectorize(window_size=self.window_size)
         
-        image = []
-        for i in range(0, len(list_images)):
-            new_image = np.load(os.path.join(path, list_images[i]))
-            new_image = sliding_window.fit_transform(new_image)
-            image.append(new_image)
-        image = np.stack(image, axis=-1)
+        # len_Sw = (shape[0]-2*(self.window_size//2))*(shape[1]-2*(self.window_size//2))
 
-        print(f"Total image shape: {image.shape}")
-
-        self.lambda_=np.nan*np.ones((image.shape[0]))
-        with Parallel(n_jobs = self.n_jobs_cov) as parallel:
-            self.lambda_ = parallel(
-                delayed(self.scale_and_shape_equality_robust_statistic)(
-                    i, tol = self.tol, iter_max = self.iter_max, scale = self.scale) 
-                    for i,t in zip(image,trange(image.shape[0])))
-        self.lambda_ = np.array(self.lambda_).reshape((shape[0]-2*(window_size//2), shape[1]-2*(window_size//2)))
+        # with Parallel(n_jobs=self.n_jobs_cov) as parallel:
+        #     self.lambda_ = parallel(
+        #         delayed(self.get_lambda)(
+        #             i_px, list_images, path = path, tol = self.tol, iter_max = self.iter_max, scale = self.scale)
+        #             for i_px in trange(len_Sw))
+        
+        # self.lambda_ = np.array(self.lambda_).reshape((shape[0]-2*(window_size//2), shape[1]-2*(window_size//2)))
         
         # image = []
         # for i in range(0, len(list_images)):
-        #     new_image = np.load(os.path.join(path, list_images[i])).reshape((shape[0] * shape[1], shape[2]))
-        #     new_image = new_image.T
-        #     print(new_image.shape)
+        #     new_image = np.load(os.path.join(path, list_images[i]))
+        #     new_image = sliding_window.fit_transform(new_image)
         #     image.append(new_image)
+        #     new_image = None
         # image = np.stack(image, axis=-1)
-        # print(image.shape)
-        # self.lambda_ = self.scale_and_shape_equality_robust_statistic(image, tol = self.tol, iter_max = self.iter_max, scale = self.scale)
+        # print(f"Total image shape: {image.shape}")
+        # image = np.transpose(image, (0,2,1,3))
+
+
+        # self.lambda_=np.nan*np.ones((image.shape[0]))
+        # with Parallel(n_jobs = self.n_jobs_cov) as parallel:
+        #     self.lambda_ = parallel(
+        #         delayed(self.scale_and_shape_equality_robust_statistic)(
+        #             i, tol = self.tol, iter_max = self.iter_max, scale = self.scale) 
+        #             for i, t in zip(image, trange(image.shape[0])))
+        # self.lambda_ = np.array(self.lambda_).reshape((shape[0]-2*(window_size//2), shape[1]-2*(window_size//2)))
 
         return self
     
@@ -574,33 +598,26 @@ if __name__ == "__main__":
     parser.add_argument("--cores", type=int, default=12)
     parser.add_argument("--storage_path", type=str, required=True)
     parser.add_argument("--number_run", "-n", type=str, default="")
-    parser.add_argument("--robust", type=bool, default=False)
+    parser.add_argument("--robust", type=int, required=0)
     args = parser.parse_args()
 
-    DIR = args.image # "Scene_2"
-    # HOME_DIR = "/home/verlyndem/Documents/Tests_change_detection/SAR-change-detection/"
-    # DIR = 'custom_test_image_n22500_T4_p3_2'
-    
-    window_size = int(args.window) #11
+    print(args)
+
+    DIR = args.image    
+    window_size = int(args.window)
     n_jobs_cov = int(args.cores)
     
     # Pipelines definition
-    pipeline_pw = Pipeline([
-        ('rj_test', PairwiseRjTest(window_size=window_size, n_jobs_cov=n_jobs_cov, return_count=False, threshold=0.95))
-        ],
-        verbose=False)
-    pipeline_rob = Pipeline([
-        ('robust_change_detection', RobustChangeDetection(window_size=window_size, threshold=0.95, n_jobs_cov = n_jobs_cov, tol=0.01, iter_max=15, scale="log"))
-        ],
-        verbose=False)
-        
-    # pipelines = [pipeline_pw, pipeline_rob]
-    # pipelines_names = ['pairwise_change_detection', 'robust_change_detection']
-
     if args.robust:
-        pipeline = pipeline_rob
+        pipeline = Pipeline([
+            ('robust_change_detection', RobustChangeDetection(window_size=window_size, threshold=0.95, n_jobs_cov = n_jobs_cov, tol=0.01, iter_max=15, scale="log"))
+            ],
+            verbose=False)
     else:
-        pipeline = pipeline_pw
+        pipeline = Pipeline([
+            ('rj_test', PairwiseRjTest(window_size=window_size, n_jobs_cov=n_jobs_cov, return_count=False, threshold=0.95))
+            ],
+            verbose=False)
 
     height, width =  np.load(os.path.join(DIR, os.listdir(DIR)[0])).shape[:2]
 
