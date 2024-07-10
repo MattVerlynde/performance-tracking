@@ -29,7 +29,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Circle 
 from sklearn.metrics.pairwise import euclidean_distances
 
-def plot_stats(output):
+def plot_stats(storage_path):
     """Function to plot PCA and T-SNE on consumption and performance data.
 
     Parameters
@@ -37,7 +37,7 @@ def plot_stats(output):
     output: str
         Path to the output csv file
     """
-    
+    output = os.path.join(storage_path, f"output_all.csv")
     print("-"*14)
     print("Analysing data")
     print("-"*14)
@@ -72,7 +72,7 @@ def plot_stats(output):
             ax.set_ylabel(f"PCA {iax+2}")
     plt.tight_layout()
     plt.show()
-    fig.savefig(os.path.join(args.storage_path, "pca_circle.png"))
+    fig.savefig(os.path.join(storage_path, "pca_circle.png"))
 
     # Plot PCA representation in correlation circle
 
@@ -104,7 +104,7 @@ def plot_stats(output):
         height=700
     )
 
-    fig.write_html(os.path.join(args.storage_path, "pca_circle.html"), include_mathjax='cdn')
+    fig.write_html(os.path.join(storage_path, "pca_circle.html"), include_mathjax='cdn')
 
     # Plot data in PCA representation
 
@@ -114,7 +114,7 @@ def plot_stats(output):
         labels={0: f"Dimension 1 ({eig['% variance expliquée'][0]}%)", 1: f"Dimension 2 ({eig['% variance expliquée'][1]}%)"},
         hover_data=data.columns)
     
-    fig.write_html(os.path.join(args.storage_path, "pca.html"), include_mathjax='cdn')
+    fig.write_html(os.path.join(storage_path, "pca.html"), include_mathjax='cdn')
 
     print("-"*29)
     print("Plotting T-SNE representation")
@@ -127,7 +127,7 @@ def plot_stats(output):
         labels={0: "Dimension 1", 1: "Dimension 2"},
         hover_data=data.columns)
     
-    fig.write_html(os.path.join(args.storage_path, "tsne.html"), include_mathjax='cdn')
+    fig.write_html(os.path.join(storage_path, "tsne.html"), include_mathjax='cdn')
 
     # Plot AUC vs Energy
 
@@ -135,7 +135,7 @@ def plot_stats(output):
         title=f"Energy consumption vs AUC",
         hover_data=data.columns)
     
-    fig.write_html(os.path.join(args.storage_path, "auc_energy.html"), include_mathjax='cdn')
+    fig.write_html(os.path.join(storage_path, "auc_energy.html"), include_mathjax='cdn')
     print("-"*24)
     print(" "*10+"DONE"+" "*10)
     print("-"*24)
@@ -195,4 +195,4 @@ if __name__ == "__main__":
 
         output_df.to_csv(OUTPUT_PATH, index=False)
     
-    plot_stats(OUTPUT_PATH)
+    plot_stats(args.storage_path)
