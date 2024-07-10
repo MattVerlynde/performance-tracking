@@ -20,8 +20,8 @@ from scipy import integrate
 from skimage.metrics import structural_similarity
 
 import sys
-sys.path.append('../')
-from conso.get_conso import make_table, query_data, filter_time, get_score 
+sys.path.append('/home/verlyndem/Documents/Tests_change_detection/SAR-change-detection/performance-tracking/experiments')
+from get_conso import make_table, query_data, filter_time, get_score 
 from conso_change.get_perf import get_perf_change
 from conso_clustering.get_perf import get_perf_clustering
 
@@ -81,7 +81,7 @@ def get_stats(results, times, storage_path, query=True):
             perf = get_perf_change(storage_path, result)
         elif "clustering" in storage_path:
             perf = get_perf_clustering(storage_path)
-        df_perf = pd.concat([df_perf, pd.DataFrame(perf)], axis=0)
+        df_perf = pd.concat([df_perf, pd.DataFrame(perf)], axis=0, ignore_index=True)
     
     stats = pd.concat([stats, df_perf], axis=1)
     stats["Duration"] = pd.DataFrame(get_time(times))

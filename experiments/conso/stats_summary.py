@@ -29,66 +29,23 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Circle 
 from sklearn.metrics.pairwise import euclidean_distances
 
-if __name__ == "__main__":
+def plot_stats(output):
+    """Function to plot PCA and T-SNE on consumption and performance data.
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--storage_path", type=str, default="simulations/results_qanat/conso-change")
-    parser.add_argument("--id", type=int, required=True, nargs='+')
-    parser.add_argument("--grouped", "-g", type=bool, default=False)
-    parser.add_argument("--query", "-q", type=bool, default=True)
-    args = parser.parse_args()
-
-    output_df = pd.DataFrame()
-
-    if not args.grouped:
-        for id in args.id:
-            results = os.path.join(args.storage_path, f"run_{id}", "results.txt")
-            times = os.path.join(args.storage_path, f"run_{id}", "times.txt")
-
-
-            with open(os.path.join(args.storage_path, f"run_{id}", "group_info.yaml"), 'r') as f:
-                paramYaml = yaml.load(f, Loader=yaml.FullLoader)
-
-            window = int(paramYaml['parameters']['--window'])
-            cores = int(paramYaml['parameters']['--cores'])
-            output_df_i = get_stats(results, times, os.path.join(args.storage_path, f"run_{id}"), args.query)
-            output_df_i["Window size"] = window*np.ones(len(output_df_i))
-            output_df_i["Threads"] = cores*np.ones(len(output_df_i))
-
-            # T = int(paramYaml['parameters']['--image'][-7:-5])
-            # output_df_i["T"] = T*np.ones(len(output_df_i))
-
-            output_df = pd.concat([output_df, output_df_i], ignore_index=True)
-    else:
-        id = args.id[0]
-        list_group = sorted(os.listdir(os.path.join(args.storage_path, f"run_{id}")))[:-1]
-        for group in list_group:
-            results = os.path.join(args.storage_path, f"run_{id}", group, "results.txt")
-            times = os.path.join(args.storage_path, f"run_{id}", group, "times.txt")
-
-            with open(os.path.join(args.storage_path, f"run_{id}", group, "group_info.yaml"), 'r') as f:
-                paramYaml = yaml.load(f, Loader=yaml.FullLoader)
-
-            window = int(paramYaml['parameters']['--window'])
-            cores = int(paramYaml['parameters']['--cores'])
-            output_df_i = get_stats(results, times, os.path.join(args.storage_path, f"run_{id}", group), args.query)
-            output_df_i["Window size"] = window*np.ones(len(output_df_i))
-            output_df_i["Threads"] = cores*np.ones(len(output_df_i))
-
-            # T = int(paramYaml['parameters']['--image'][-7:-5])
-            # output_df_i["T"] = T*np.ones(len(output_df_i))
-
-            output_df = pd.concat([output_df, output_df_i], ignore_index=True)
-
+    Parameters
+    ----------
+    output: str
+        Path to the output csv file
+    """
     
-    output = os.path.join(args.storage_path, f"output_all.csv")
-    output_df.to_csv(output, index=False)
-
+    print("-"*14)
+    print("Analysing data")
+    print("-"*14)
     eig, data, data_pca, data_tsne, tsne_div, coordvar, ccircle, eucl_dist1, eucl_dist2 = analyse_stats(output)
-
-    print(coordvar)
-
     
+    print("-"*27)
+    print("Plotting PCA representation")
+    print("-"*27)
     with plt.style.context(('seaborn-v0_8-whitegrid')):
         fig, axs = plt.subplots(1,2,figsize=(16, 8))
         for iax,ax in enumerate(axs):
@@ -159,6 +116,9 @@ if __name__ == "__main__":
     
     fig.write_html(os.path.join(args.storage_path, "pca.html"), include_mathjax='cdn')
 
+    print("-"*29)
+    print("Plotting T-SNE representation")
+    print("-"*29)
     # Plot data in t-SNE representation
 
     print(data_tsne.shape)
@@ -176,4 +136,63 @@ if __name__ == "__main__":
         hover_data=data.columns)
     
     fig.write_html(os.path.join(args.storage_path, "auc_energy.html"), include_mathjax='cdn')
+    print("-"*24)
+    print(" "*10+"DONE"+" "*10)
+    print("-"*24)
 
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--storage_path", type=str, default="simulations/results_qanat/conso-change")
+    parser.add_argument("--id", type=int, required=True, nargs='+')
+    parser.add_argument("--grouped", "-g", type=bool, default=False)
+    parser.add_argument("--file", "-f", type=bool, default=False)
+    args = parser.parse_args()
+
+    OUTPUT_PATH = os.path.join(args.storage_path, f"output_all.csv")
+    if not args.file:
+        output_df = pd.DataFrame()
+        
+        if not args.grouped:
+            for id in args.id:
+                results = os.path.join(args.storage_path, f"run_{id}", "results.txt")
+                times = os.path.join(args.storage_path, f"run_{id}", "times.txt")
+
+
+                with open(os.path.join(args.storage_path, f"run_{id}", "group_info.yaml"), 'r') as f:
+                    paramYaml = yaml.load(f, Loader=yaml.FullLoader)
+
+                window = int(paramYaml['parameters']['--window'])
+                cores = int(paramYaml['parameters']['--cores'])
+                output_df_i = get_stats(results, times, os.path.join(args.storage_path, f"run_{id}"), True)
+                output_df_i["Window size"] = window*np.ones(len(output_df_i))
+                output_df_i["Threads"] = cores*np.ones(len(output_df_i))
+
+                # T = int(paramYaml['parameters']['--image'][-7:-5])
+                # output_df_i["T"] = T*np.ones(len(output_df_i))
+
+                output_df = pd.concat([output_df, output_df_i], ignore_index=True)
+        else:
+            id = args.id[0]
+            list_group = sorted(os.listdir(os.path.join(args.storage_path, f"run_{id}")))[:-1]
+            for group in list_group:
+                results = os.path.join(args.storage_path, f"run_{id}", group, "results.txt")
+                times = os.path.join(args.storage_path, f"run_{id}", group, "times.txt")
+
+                with open(os.path.join(args.storage_path, f"run_{id}", group, "group_info.yaml"), 'r') as f:
+                    paramYaml = yaml.load(f, Loader=yaml.FullLoader)
+
+                window = int(paramYaml['parameters']['--window'])
+                cores = int(paramYaml['parameters']['--cores'])
+                output_df_i = get_stats(results, times, os.path.join(args.storage_path, f"run_{id}", group), True)
+                output_df_i["Window size"] = window*np.ones(len(output_df_i))
+                output_df_i["Threads"] = cores*np.ones(len(output_df_i))
+
+                # T = int(paramYaml['parameters']['--image'][-7:-5])
+                # output_df_i["T"] = T*np.ones(len(output_df_i))
+
+                output_df = pd.concat([output_df, output_df_i], ignore_index=True)
+
+        output_df.to_csv(OUTPUT_PATH, index=False)
+    
+    plot_stats(OUTPUT_PATH)

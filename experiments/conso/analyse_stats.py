@@ -43,7 +43,8 @@ def analyse_stats(output):
     data_pca: numpy array
         Data transformed by the PCA
     """
-    data = pd.read_csv(output, header=0)
+    chunk = pd.read_csv(output, header=0, chunksize=10000)
+    data = pd.concat(chunk)
     n = data.shape[0] # nb individus
     p = data.shape[1] # nb variables
     print(f"Nombre d'individus: {n}, Nombre de variables: {p}")

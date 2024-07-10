@@ -16,7 +16,7 @@ from sklearn.pipeline import Pipeline
 
 from pyriemann.estimation import Covariances
 from pyriemann.clustering import Kmeans
-from helpers.processing_helpers import SlidingWindowVectorize
+from conso_clustering.helpers.processing_helpers import SlidingWindowVectorize
 
 import argparse
 

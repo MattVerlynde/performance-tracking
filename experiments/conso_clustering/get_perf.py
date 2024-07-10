@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn import metrics
 
-from utils_clustering import load_data
+from conso_clustering.utils_clustering import load_data
 
 import plotly.express as px
 
