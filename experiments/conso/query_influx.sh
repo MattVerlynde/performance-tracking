@@ -20,7 +20,7 @@ qenergy="data=from(bucket: \"telegraf_bucket\")
   |> range(start: ${t0}, stop: ${t1})
   |> filter(fn: (r) => r[\"_measurement\"] == \"mqtt_consumer\")
   |> filter(fn: (r) => r[\"_field\"] == \"value\")
-  |> filter(fn: (r) => r[\"topic\"] == \"zwave/Smart_switch_PC/50/0/value/65537\")
+  |> filter(fn: (r) => r[\"topic\"] == \"zwave/Smart_switch_PC/50/0/value/66049\")
   |> yield()"
 
 qtemp="data=from(bucket: \"telegraf_bucket\")

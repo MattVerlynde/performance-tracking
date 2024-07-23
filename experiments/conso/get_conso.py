@@ -102,7 +102,8 @@ def get_integral(t, y, d):
     integral: float
         Integral of the variable over the time interval
     """
-    return (t.iloc[1]-t.iloc[0])*(y.iloc[1]+y.iloc[0]-2*d)/2
+    T = t.iloc[1]-t.iloc[0]
+    return T*(y.iloc[1]+y.iloc[0]-2*d)/2
 
 def get_score(df_list,time_path):
     """Function to slice an input database using the input timestamps.
@@ -131,20 +132,19 @@ def get_score(df_list,time_path):
         df_list_var = filter_time(df_list[i_var],time_path)
         i_df = 0
         list_integrals_var = []
-        # print(len(df_list_var))
         while i_df < len(df_list_var):
             i_row = 0
             d = 0
             integral = 0
             while i_row < len(df_list_var[i_df])-1:
-                x = pd.to_datetime(df_list_var[i_df].iloc[i_row:i_row+2,0], dayfirst=True).apply(lambda x: x.value-t0).astype('int')
+                x = pd.to_datetime(df_list_var[i_df].iloc[i_row:i_row+2,0], format="%d/%m/%Y %H:%M:%S", dayfirst=True).astype('int')
                 y = df_list_var[i_df].iloc[i_row:i_row+2,1].astype('float')
                 i_row += 1
                 integral += get_integral(x,y,d)
             if i_df == 0:
                 d = integral/T
             elif i_df > 1:
-                list_integrals_var.append(integral/1e9)
+                list_integrals_var.append(integral/1e9) # Converting nanoseconds to seconds
             i_df += 1
         list_integrals.append(list_integrals_var)
         i_var += 1

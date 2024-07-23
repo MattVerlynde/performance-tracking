@@ -21,6 +21,146 @@ from multiprocessing import Process, Queue
 import numpy as np
 import time
 from tqdm import tqdm
+import warnings
+
+def tyler_estimator_covariance(𝐗, tol=0.001, iter_max=20):
+    """ A function that computes the Tyler Fixed Point Estimator for covariance matrix estimation
+        Inputs:
+            * 𝐗 = a matrix of size p*N with each observation along column dimension
+            * tol = tolerance for convergence of estimator
+            * iter_max = number of maximum iterations
+        Outputs:
+            * 𝚺 = the estimate
+            * δ = the final distance between two iterations
+            * iteration = number of iterations til convergence """
+
+    # Initialisation
+    (p, N) = 𝐗.shape
+    δ = np.inf # Distance between two iterations
+    𝚺 = np.eye(p) # Initialise estimate to identity
+    iteration = 0
+
+    # Recursive algorithm
+    while (δ>tol) and (iteration<iter_max):
+        
+        # Computing expression of Tyler estimator (with matrix multiplication)
+        τ = np.diagonal(𝐗.conj().T@np.linalg.inv(𝚺)@𝐗)
+        𝐗_bis = 𝐗 / np.sqrt(τ)
+        𝚺_new = (p/N) * 𝐗_bis@𝐗_bis.conj().T
+
+        # Imposing trace constraint: Tr(𝚺) = p
+        𝚺_new = p*𝚺_new/np.trace(𝚺_new)
+
+        # Condition for stopping
+        δ = np.linalg.norm(𝚺_new - 𝚺, 'fro') / np.linalg.norm(𝚺, 'fro')
+        iteration = iteration + 1
+
+        # Updating 𝚺
+        𝚺 = 𝚺_new
+
+    if iteration == iter_max:
+        warnings.warn('Recursive algorithm did not converge')
+
+    return (𝚺, δ, iteration)
+
+def tyler_estimator_covariance_matandtext(𝐗, tol=0.0001, iter_max=20):
+    """ A function that computes the Modified Tyler Fixed Point Estimator for 
+    covariance matrix estimation under problem MatAndText.
+        Inputs:
+            * 𝐗 = a matrix of size p*N*T with each saptial observation along column dimension and time
+                observation along third dimension.
+            * tol = tolerance for convergence of estimator
+            * iter_max = number of maximum iterations
+        Outputs:
+            * 𝚺 = the estimate
+            * δ = the final distance between two iterations
+            * iteration = number of iterations til convergence """
+
+    (p, N, T) = 𝐗.shape
+    δ = np.inf # Distance between two iterations
+    𝚺 = np.eye(p) # Initialise estimate to identity
+    iteration = 0
+
+    # Recursive algorithm
+    while (δ>tol) and iteration < iter_max:
+
+        # Compute the textures for each pixel using all the dates avalaibe
+        τ = 0
+        i𝚺 = np.linalg.inv(𝚺)
+        for t in range(0, T):
+            τ = τ + np.diagonal(𝐗[:,:,t].conj().T@i𝚺@𝐗[:,:,t])
+
+        # Computing expression of the estimator
+        𝚺_new = 0
+        for t in range(0, T):
+            𝐗_bis = 𝐗[:,:,t] / np.sqrt(τ)
+            𝚺_new = 𝚺_new + (p/N) * 𝐗_bis@𝐗_bis.conj().T
+
+        # Imposing trace constraint: Tr(𝚺) = p
+        𝚺_new = p*𝚺_new/np.trace(𝚺_new)
+
+        # Condition for stopping
+        δ = np.linalg.norm(𝚺_new - 𝚺, 'fro') / np.linalg.norm(𝚺, 'fro')
+
+        # Updating 𝚺
+        𝚺 = 𝚺_new
+        iteration = iteration + 1
+
+    if iteration == iter_max:
+        warnings.warn('Recursive algorithm did not converge')
+
+    return (𝚺, δ, iteration)
+
+def scale_and_shape_equality_robust_statistic(𝐗, args):
+    """ GLRT test for testing a change in the scale or/and shape of 
+        a deterministic SIRV model.
+        Inputs:
+            * 𝐗 = a (p, N, T) numpy array with:
+                * p = dimension of vectors
+                * N = number of Samples at each date
+                * T = length of time series
+            * args = tol, iter_max for Tyler, scale
+        Outputs:
+            * the statistic given the observations in input"""
+
+    (p, N, T) = 𝐗.shape
+    (tol, iter_max, scale) = args
+
+    # Estimating 𝚺_0 using all the observations
+    (𝚺_0, δ, niter) = tyler_estimator_covariance_matandtext(𝐗, tol, iter_max)
+    i𝚺_0 = np.linalg.inv(𝚺_0)
+
+    # Some initialisation
+    log_numerator_determinant_terms = T*N*np.log(np.abs(np.linalg.det(𝚺_0)))
+    log_denominator_determinant_terms = 0
+    𝛕_0 = 0
+    log𝛕_t = 0
+    # Iterating on each date to compute the needed terms
+    for t in range(0,T):
+        # Estimating 𝚺_t
+        (𝚺_t, δ, iteration) = tyler_estimator_covariance(𝐗[:,:,t], tol, iter_max)
+
+        # Computing determinant add adding it to log_denominator_determinant_terms
+        log_denominator_determinant_terms = log_denominator_determinant_terms + \
+            N*np.log(np.abs(np.linalg.det(𝚺_t)))
+
+        # Computing texture estimation
+        𝛕_0 =  𝛕_0 + np.diagonal(𝐗[:,:,t].conj().T@i𝚺_0@𝐗[:,:,t]) / T
+        log𝛕_t = log𝛕_t + np.log(np.diagonal(𝐗[:,:,t].conj().T@np.linalg.inv(𝚺_t)@𝐗[:,:,t]))
+
+    # Computing quadratic terms
+    log_numerator_quadtratic_terms = T*p*np.sum(np.log(𝛕_0))
+    log_denominator_quadtratic_terms = p*np.sum(log𝛕_t)
+
+    # Final expression of the statistic
+    if scale=='linear':
+        λ = np.exp(np.real(log_numerator_determinant_terms - log_denominator_determinant_terms + \
+        log_numerator_quadtratic_terms - log_denominator_quadtratic_terms))
+    else:
+        λ = np.real(log_numerator_determinant_terms - log_denominator_determinant_terms + \
+        log_numerator_quadtratic_terms - log_denominator_quadtratic_terms)
+
+    return λ 
 
 
 def sliding_windows_treatment_image_time_series(image, windows_mask, function_to_compute, function_args, multi=False, queue=0,
@@ -35,7 +175,7 @@ def sliding_windows_treatment_image_time_series(image, windows_mask, function_to
             * function_to_compute = a function to compute the desired quantity. Must output a list.
             * function_args = arguments to pass to function_to_compute
             * multi = True if parallel computing (use the parallel function not this one), False if not
-            * queue = to obtain result for parralel computation
+            * queue = to obtain result for parallel computation
             * progressbar = display a progressbar or not
         Outputs:
             * a 3-d array corresponding to the results. First two dimensions are spatial while the third correspond
@@ -184,8 +324,11 @@ def sliding_windows_treatment_image_time_series_parallel(image, windows_mask, fu
         final_array_row = None
 
     else:
-        results = sliding_windows_treatment_image_time_series(image, windows_mask, 
-                                        function_to_compute, function_args)
+        results = sliding_windows_treatment_image_time_series(image, windows_mask = windows_mask, 
+                                                              function_to_compute = function_to_compute, 
+                                                              function_args = function_args, 
+                                                              multi = multi,
+                                                              progressbar = progressbar)
     return results
    
     

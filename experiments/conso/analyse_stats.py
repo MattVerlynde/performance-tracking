@@ -18,7 +18,7 @@ import subprocess
 import plotly.express as px
 from scipy import integrate
 from skimage.metrics import structural_similarity
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 
@@ -28,13 +28,13 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Circle 
 from sklearn.metrics.pairwise import euclidean_distances
 
-def analyse_stats(output):
+def analyse_stats(data):
     """Function to compute PCA on consumption and performance data.
 
     Parameters
     ----------
-    output: str
-        Path to the output csv file
+    data: Dataframe
+        Output
     
     Returns
     -------
@@ -43,14 +43,13 @@ def analyse_stats(output):
     data_pca: numpy array
         Data transformed by the PCA
     """
-    chunk = pd.read_csv(output, header=0, chunksize=10000)
-    data = pd.concat(chunk)
     n = data.shape[0] # nb individus
     p = data.shape[1] # nb variables
     print(f"Nombre d'individus: {n}, Nombre de variables: {p}")
 
-    scaler = MinMaxScaler()
+    scaler = StandardScaler()
     data_scaled = pd.DataFrame(scaler.fit_transform(data))
+    data_scaled = data_scaled.dropna(axis=0)
     data_scaled.columns = data.columns
 
     pca = PCA()
@@ -94,7 +93,7 @@ def analyse_stats(output):
     data_tsne = tsne.fit_transform(data_scaled)
     print(f"t-SNE KL divergence: {tsne.kl_divergence_}")
 
-    return eig, data, data_pca, data_tsne, tsne.kl_divergence_, coordvar, ccircle, eucl_dist1, eucl_dist2
+    return eig, data_pca, data_tsne, tsne.kl_divergence_, coordvar, ccircle, eucl_dist1, eucl_dist2
 
 
 if __name__ == "__main__":

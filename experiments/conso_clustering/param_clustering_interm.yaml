@@ -1,7 +1,7 @@
 fixed_args:
     positional:
         pos_0: -n
-        pos_1: '50'
+        pos_1: '100'
     options:
         '--n_clusters': 2
 
@@ -12,27 +12,39 @@ varying_args:
             '--riemann': [0, 2, 1]
 
     groups:
-        - options:
+        - options: # Group 1
+            '--window': 5
+            '--image': 'data/Scene_1small/Scene_1small_0.npy'
+            
+        - options: # Group 2
             '--window': 5
             '--image': 'data/Scene_2small/Scene_2small_0.npy'
         
-        - options:
+        - options: # Group 3
             '--window': 5
             '--image': 'data/Scene_3small/Scene_3small_0.npy'
             
-        - options:
+        - options: # Group 4
+            '--window': 7
+            '--image': 'data/Scene_1small/Scene_1small_0.npy'
+            
+        - options: # Group 5
             '--window': 7
             '--image': 'data/Scene_2small/Scene_2small_0.npy'
             
-        - options:
+        - options: # Group 6
             '--window': 7
             '--image': 'data/Scene_3small/Scene_3small_0.npy'
             
-        - options:
+        - options: # Group 7
+            '--window': 21
+            '--image': 'data/Scene_1small/Scene_1small_0.npy'
+            
+        - options: # Group 8
             '--window': 21
             '--image': 'data/Scene_2small/Scene_2small_0.npy'
             
-        - options:
+        - options: # Group 9
             '--window': 21
             '--image': 'data/Scene_3small/Scene_3small_0.npy'
             

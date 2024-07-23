@@ -15,7 +15,6 @@ import re
 import numpy as np
 import argparse
 import plotly.express as px
-from scipy import integrate
 from sklearn import metrics
 from skimage.metrics import structural_similarity
 
@@ -57,12 +56,11 @@ def get_perf_change(storage_path, result):
 
     fpr, tpr, threshold = metrics.roc_curve(y_true=ref_thresh.flatten(), y_score=result.flatten())
     auc = metrics.auc(fpr, tpr)
-
-    ssim = structural_similarity(ref_thresh, result, data_range=1.0)
+    average_precision_score = metrics.average_precision_score(ref_thresh.flatten(), result.flatten())
 
     perf = {}
     perf["AUC"] = auc
-    perf["SSIM"] = ssim
+    perf["Average Precision"] = average_precision_score
 
     return tpr, fpr, perf
 

@@ -1,48 +1,37 @@
 fixed_args:
+    options:
+        '--robust': 0
     positional:
         pos_0: -n
-        pos_1: '100'
+        pos_1: '50'
 
 varying_args:
     range:
         options:
             '--cores': [1, 13, 11]
-            '--robust': [0, 2, 1]
 
     groups:
-        - options: # Group 1
+        - options:
             '--window': 5
-            '--image': 'data/Scene_1'
-            
-        - options: # Group 2
-            '--window': 5
-            '--image': 'data/Scene_2'
+            '--image': 'data/Scene_2small'
         
-        - options: # Group 3
+        - options:
             '--window': 5
             '--image': 'data/Scene_3small'
             
-        - options: # Group 4
+        - options:
             '--window': 7
-            '--image': 'data/Scene_1'
+            '--image': 'data/Scene_2small'
             
-        - options: # Group 5
-            '--window': 7
-            '--image': 'data/Scene_2'
-            
-        - options: # Group 6
+        - options:
             '--window': 7
             '--image': 'data/Scene_3small'
             
-        - options: # Group 7
+        - options:
             '--window': 21
-            '--image': 'data/Scene_1'
+            '--image': 'data/Scene_2small'
             
-        - options: # Group 8
-            '--window': 21
-            '--image': 'data/Scene_2'
-            
-        - options: # Group 9
+        - options:
             '--window': 21
             '--image': 'data/Scene_3small'
             

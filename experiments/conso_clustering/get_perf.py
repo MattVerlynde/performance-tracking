@@ -31,7 +31,7 @@ def get_perf_clustering(storage_path):
     with open(os.path.join(storage_path, "group_info.yaml"), 'r') as f:
         paramYaml = yaml.load(f, Loader=yaml.FullLoader)
 
-    data_path = paramYaml['parameters']['--data_path']
+    data_path = paramYaml['parameters']['--image']
     n_clusters = int(paramYaml['parameters']['--n_clusters'])
     window_size = int(paramYaml['parameters']['--window'])
 
@@ -43,12 +43,12 @@ def get_perf_clustering(storage_path):
     list_cluster = sorted(os.listdir(os.path.join(storage_path, "output")))
     for file_cluster in list_cluster:
         result = np.load(os.path.join(storage_path, "output", file_cluster))
-    scores = {}
-    scores["silhouette_score"] = metrics.silhouette_score(data, result.flatten())
-    scores["calinski_harabasz_score"] = metrics.calinski_harabasz_score(data, result.flatten())
-    scores["davies_bouldin_score"] = metrics.davies_bouldin_score(data, result.flatten())
+    perf = {}
+    perf["Silhouette"] = metrics.silhouette_score(data, result.flatten())
+    perf["Calinski-Harabasz"] = metrics.calinski_harabasz_score(data, result.flatten())
+    perf["Davies-Bouldin"] = metrics.davies_bouldin_score(data, result.flatten())
 
-    return scores
+    return perf
 
 ###############################################################################
 # References
@@ -71,9 +71,9 @@ if __name__ == "__main__":
     parser.add_argument("--plot", type=bool, default=False)
     args = parser.parse_args()
 
-    scores = get_perf_clustering(args.storage_path)
+    perf = get_perf_clustering(args.storage_path)
         
     print("Done")
-    print(f"Score is {scores}")
+    print(f"Score is {perf}")
     print("End of the script")
 

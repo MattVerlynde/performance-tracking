@@ -25,7 +25,6 @@ import argparse
 # ---------
 def load_data(data_path, n_clusters, window_size, small_dataset):
 
-    print(f"Loading data :")
     data = np.load(data_path)
     data_visualization = data.copy()  # To avoid aliasing when showing data
     n_components = data.shape[2]
@@ -51,7 +50,6 @@ def load_data(data_path, n_clusters, window_size, small_dataset):
     y_values = np.arange(window_size//2, height-window_size//2) * resolution_y
     X_res, Y_res = np.meshgrid(x_values, y_values)
 
-    print("Reading done.")
     return data, data_visualization, X_image, Y_image, X_res, Y_res
 
 ###############################################################################
@@ -148,7 +146,7 @@ if __name__ == "__main__":
     parser.add_argument("--data_path", type=str, default="data/Scene_1/Scene_1_0.npy")
     parser.add_argument("--n_jobs", type=int, default=-1)
     parser.add_argument("--max_iter", type=int, default=100)
-    parser.add_argument("--small_dataset", type=bool, default=True)
+    parser.add_argument("--small_dataset", type=bool, default=False)
     parser.add_argument("--estimator", type=str, default="scm")
     parser.add_argument("--n_clusters", type=int, default=4)
     parser.add_argument("--number_run", "-n", type=str, default="")

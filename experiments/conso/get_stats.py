@@ -68,7 +68,7 @@ def get_stats(results, times, storage_path, query=True):
     tab_results = make_table(results)
     list_integrals = get_score(tab_results,times)
 
-    params = ["CPU", "Memory", "Energy", "Temperature", "Reads"]
+    params = ["CPU", "Memory", "Energy (plug)", "Temperature", "Reads"]
     for i in range(len(list_integrals)):
         param = params[i]
         list_val = list_integrals[i]
@@ -78,21 +78,26 @@ def get_stats(results, times, storage_path, query=True):
     for file in os.listdir(os.path.join(os.path.dirname(results), "output")):
         result = np.load(os.path.join(os.path.dirname(results), "output", file))
         if "change" in storage_path:
-            perf = get_perf_change(storage_path, result)
+            _, _, perf = get_perf_change(storage_path, result)
         elif "clustering" in storage_path:
             perf = get_perf_clustering(storage_path)
-        df_perf = pd.concat([df_perf, pd.DataFrame(perf)], axis=0, ignore_index=True)
+        df_perf = pd.concat([df_perf, pd.DataFrame([perf])], axis=0, ignore_index=True)
     
     stats = pd.concat([stats, df_perf], axis=1)
     stats["Duration"] = pd.DataFrame(get_time(times))
 
     list_carbon = []
+    list_energy_code_carbon = []
     for file in os.listdir(os.path.join(os.path.dirname(results), "codecarbon")):
-        result = os.path.join(os.path.dirname(results), "codecarbon", file)
-        carbon = pd.read_csv(result, header=0)["emissions"].values[-1]
+        codecarbon_path = os.path.join(os.path.dirname(results), "codecarbon", file)
+        codecarbon_results = pd.read_csv(codecarbon_path, header=0).iloc[-1,:]
+        carbon = codecarbon_results["emissions"]
         list_carbon.append(carbon)
+        energy_code_carbon = 3.6*1e6*codecarbon_results["energy_consumed"]
+        list_energy_code_carbon.append(energy_code_carbon)
         
-    stats["Emissions"] = pd.DataFrame(list_carbon)
+    stats["Emissions"] = pd.Series(list_carbon)
+    stats["Energy (CodeCarbon)"] = pd.Series(list_energy_code_carbon)    
 
     return stats
 

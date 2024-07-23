@@ -31,7 +31,7 @@ from joblib import Parallel, delayed
 import argparse
 import warnings
 
-from helpers.multivariate_images_tool import sliding_windows_treatment_image_time_series_parallel
+from helpers.multivariate_images_tool import sliding_windows_treatment_image_time_series_parallel, scale_and_shape_equality_robust_statistic
 
 
 
@@ -146,6 +146,46 @@ class Covariance(BaseEstimator, TransformerMixin):
     def fit_transform(self, X: ArrayLike, y=None):
         return self.fit(X).transform(X)
     
+class LogDiffChangeDetection(BaseEstimator, TransformerMixin):
+    """Test for change detection using the log difference between SAR images."""
+
+    def __init__(self, threshold: float = 0.95, repeat: int = 1):
+        self.threshold = threshold
+        self.repeat = max(1,repeat)
+
+
+    def fit(self, path: str, X=None, y=None):
+
+        for r in range(self.repeat):
+            list_images = os.listdir(path)
+
+            image_t0 = np.load(os.path.join(path, list_images[0]))
+            T = len(list_images)
+
+            def log_calc(image):
+                return np.sum(np.log(image), axis= 2)
+
+            image_t0 = log_calc(image_t0)
+
+            for i in range(1,T):
+                image_t1 = log_calc(np.load(os.path.join(path, list_images[i])))
+                image_t1 = image_t0 - image_t1
+            self.result_diff = np.abs(image_t1)
+        
+        return self
+    
+    def predict(self, X: ArrayLike):
+        return self.result_diff > self.threshold
+    
+    def transform(self, X: ArrayLike):
+        return self.result_diff
+    
+    def fit_predict(self, X: ArrayLike, y=None):
+        return self.fit(X).predict(X)
+    
+    def fit_transform(self, X: ArrayLike, y=None):
+        return self.fit(X).transform(X)
+    
 
 class RobustChangeDetection(BaseEstimator, TransformerMixin):
     """Test for change detection using the covariance matrix of the SAR image."""
@@ -159,202 +199,30 @@ class RobustChangeDetection(BaseEstimator, TransformerMixin):
         self.iter_max = iter_max
         self.scale = scale
     
-    def tyler_estimator_covariance(self, 𝐗, tol=0.001, iter_max=20):
-        """ A function that computes the Tyler Fixed Point Estimator for covariance matrix estimation
-            Inputs:
-                * 𝐗 = a matrix of size p*N with each observation along column dimension
-                * tol = tolerance for convergence of estimator
-                * iter_max = number of maximum iterations
-            Outputs:
-                * 𝚺 = the estimate
-                * δ = the final distance between two iterations
-                * iteration = number of iterations til convergence """
-
-        # Initialisation
-        (p, N) = 𝐗.shape
-        δ = np.inf # Distance between two iterations
-        𝚺 = np.eye(p) # Initialise estimate to identity
-        iteration = 0
-
-        # Recursive algorithm
-        while (δ>tol) and (iteration<iter_max):
-            
-            # Computing expression of Tyler estimator (with matrix multiplication)
-            τ = np.diagonal(𝐗.conj().T@np.linalg.inv(𝚺)@𝐗)
-            𝐗_bis = 𝐗 / np.sqrt(τ)
-            𝚺_new = (p/N) * 𝐗_bis@𝐗_bis.conj().T
-
-            # Imposing trace constraint: Tr(𝚺) = p
-            𝚺_new = p*𝚺_new/np.trace(𝚺_new)
-
-            # Condition for stopping
-            δ = np.linalg.norm(𝚺_new - 𝚺, 'fro') / np.linalg.norm(𝚺, 'fro')
-            iteration = iteration + 1
-
-            # Updating 𝚺
-            𝚺 = 𝚺_new
-
-        if iteration == iter_max:
-            warnings.warn('Recursive algorithm did not converge')
-
-        return (𝚺, δ, iteration)
-    
-    def tyler_estimator_covariance_matandtext(self, 𝐗, tol=0.0001, iter_max=20):
-        """ A function that computes the Modified Tyler Fixed Point Estimator for 
-        covariance matrix estimation under problem MatAndText.
-            Inputs:
-                * 𝐗 = a matrix of size p*N*T with each saptial observation along column dimension and time
-                    observation along third dimension.
-                * tol = tolerance for convergence of estimator
-                * iter_max = number of maximum iterations
-            Outputs:
-                * 𝚺 = the estimate
-                * δ = the final distance between two iterations
-                * iteration = number of iterations til convergence """
-
-        (p, N, T) = 𝐗.shape
-        δ = np.inf # Distance between two iterations
-        𝚺 = np.eye(p) # Initialise estimate to identity
-        iteration = 0
-
-        # Recursive algorithm
-        while (δ>tol) and iteration < iter_max:
-
-            # Compute the textures for each pixel using all the dates avalaibe
-            τ = 0
-            i𝚺 = np.linalg.inv(𝚺)
-            for t in range(0, T):
-                τ = τ + np.diagonal(𝐗[:,:,t].conj().T@i𝚺@𝐗[:,:,t])
-
-            # Computing expression of the estimator
-            𝚺_new = 0
-            for t in range(0, T):
-                𝐗_bis = 𝐗[:,:,t] / np.sqrt(τ)
-                𝚺_new = 𝚺_new + (p/N) * 𝐗_bis@𝐗_bis.conj().T
-
-            # Imposing trace constraint: Tr(𝚺) = p
-            𝚺_new = p*𝚺_new/np.trace(𝚺_new)
-
-            # Condition for stopping
-            δ = np.linalg.norm(𝚺_new - 𝚺, 'fro') / np.linalg.norm(𝚺, 'fro')
-
-            # Updating 𝚺
-            𝚺 = 𝚺_new
-            iteration = iteration + 1
-
-        if iteration == iter_max:
-            warnings.warn('Recursive algorithm did not converge')
-
-        return (𝚺, δ, iteration)
-    
-    def scale_and_shape_equality_robust_statistic(self, 𝐗, tol, iter_max, scale):
-        """ GLRT test for testing a change in the scale or/and shape of 
-            a deterministic SIRV model.
-            Inputs:
-                * 𝐗 = a (p, N, T) numpy array with:
-                    * p = dimension of vectors
-                    * N = number of Samples at each date
-                    * T = length of time series
-                * args = tol, iter_max for Tyler, scale
-            Outputs:
-                * the statistic given the observations in input"""
-
-        (p, N, T) = 𝐗.shape
-
-        # Estimating 𝚺_0 using all the observations
-        (𝚺_0, δ, niter) = self.tyler_estimator_covariance_matandtext(𝐗, tol, iter_max)
-        i𝚺_0 = np.linalg.inv(𝚺_0)
-
-        # Some initialisation
-        log_numerator_determinant_terms = T*N*np.log(np.abs(np.linalg.det(𝚺_0)))
-        log_denominator_determinant_terms = 0
-        𝛕_0 = 0
-        log𝛕_t = 0
-        # Iterating on each date to compute the needed terms
-        for t in range(0,T):
-            # Estimating 𝚺_t
-            (𝚺_t, δ, iteration) = self.tyler_estimator_covariance(𝐗[:,:,t], tol, iter_max)
-
-            # Computing determinant add adding it to log_denominator_determinant_terms
-            log_denominator_determinant_terms = log_denominator_determinant_terms + \
-                N*np.log(np.abs(np.linalg.det(𝚺_t)))
-
-            # Computing texture estimation
-            𝛕_0 =  𝛕_0 + np.diagonal(𝐗[:,:,t].conj().T@i𝚺_0@𝐗[:,:,t]) / T
-            log𝛕_t = log𝛕_t + np.log(np.diagonal(𝐗[:,:,t].conj().T@np.linalg.inv(𝚺_t)@𝐗[:,:,t]))
-
-        # Computing quadratic terms
-        log_numerator_quadtratic_terms = T*p*np.sum(np.log(𝛕_0))
-        log_denominator_quadtratic_terms = p*np.sum(log𝛕_t)
-
-        # Final expression of the statistic
-        if scale=='linear':
-            λ = np.exp(np.real(log_numerator_determinant_terms - log_denominator_determinant_terms + \
-            log_numerator_quadtratic_terms - log_denominator_quadtratic_terms))
-        else:
-            λ = np.real(log_numerator_determinant_terms - log_denominator_determinant_terms + \
-            log_numerator_quadtratic_terms - log_denominator_quadtratic_terms)
-
-        return λ 
-        
-    def get_lambda(self, i_px: int, list_images: list, path: str, tol: float, iter_max: int, scale: str):
-        
-        px_value = []
-        for i in range(len(list_images)):
-            image = np.load(os.path.join(path, list_images[i]))
-            if i == 0:
-                height, width, p = image.shape
-                i_px_h = i_px % (height - 2*(self.window_size//2))
-                i_px_w = i_px % (width - 2*(self.window_size//2))
-            image = image[i_px_h:i_px_h+self.window_size, i_px_w:i_px_w+self.window_size]
-            image = image.reshape((-1, p))
-            px_value.append(image)
-        px_value = np.stack(px_value, axis=-1)
-        px_value = np.transpose(px_value, (1,0,2))
-
-        lambda_i = self.scale_and_shape_equality_robust_statistic(
-            px_value, tol, iter_max, scale)
-
-        return lambda_i
-    
     def fit(self, path: str, X=None, y=None):
         list_images = os.listdir(path)
 
-        # image = np.load(os.path.join(path, list_images[0]))
-        # shape = image.shape
-        # p = shape[2]
+        image = np.load(os.path.join(path, list_images[0]))
+        n_r,n_c,p = image.shape[:3]
+        multi = self.n_jobs_cov > 1
+        T = len(list_images)
+        print(f"Multi: {multi}")
 
-        # # Pipelines definition
-        # sliding_window = SlidingWindowVectorize(window_size=self.window_size)
-        
-        # len_Sw = (shape[0]-2*(self.window_size//2))*(shape[1]-2*(self.window_size//2))
+        function_args = (self.tol, self.iter_max, self.scale)
 
-        # with Parallel(n_jobs=self.n_jobs_cov) as parallel:
-        #     self.lambda_ = parallel(
-        #         delayed(self.get_lambda)(
-        #             i_px, list_images, path = path, tol = self.tol, iter_max = self.iter_max, scale = self.scale)
-        #             for i_px in trange(len_Sw))
-        
-        # self.lambda_ = np.array(self.lambda_).reshape((shape[0]-2*(window_size//2), shape[1]-2*(window_size//2)))
-        
-        # image = []
-        # for i in range(0, len(list_images)):
-        #     new_image = np.load(os.path.join(path, list_images[i]))
-        #     new_image = sliding_window.fit_transform(new_image)
-        #     image.append(new_image)
-        #     new_image = None
-        # image = np.stack(image, axis=-1)
-        # print(f"Total image shape: {image.shape}")
-        # image = np.transpose(image, (0,2,1,3))
-
-
-        # self.lambda_=np.nan*np.ones((image.shape[0]))
-        # with Parallel(n_jobs = self.n_jobs_cov) as parallel:
-        #     self.lambda_ = parallel(
-        #         delayed(self.scale_and_shape_equality_robust_statistic)(
-        #             i, tol = self.tol, iter_max = self.iter_max, scale = self.scale) 
-        #             for i, t in zip(image, trange(image.shape[0])))
-        # self.lambda_ = np.array(self.lambda_).reshape((shape[0]-2*(window_size//2), shape[1]-2*(window_size//2)))
+        image=image.reshape((n_r*n_c,p))
+        for t in range(1,T):
+            image = np.dstack((image, np.load(os.path.join(path, list_images[t])).reshape((n_r*n_c,p))))
+        print(image.shape)
+        image=image.reshape((n_r,n_c,p,T))
+        self.lambda_ = sliding_windows_treatment_image_time_series_parallel(image, 
+                                                                            windows_mask=np.ones((self.window_size, self.window_size)), 
+                                                                            function_to_compute=scale_and_shape_equality_robust_statistic, 
+                                                                            function_args=function_args, 
+                                                                            multi=multi, 
+                                                                            number_of_threads_rows= self.n_jobs_cov//2, 
+                                                                            number_of_threads_columns= self.n_jobs_cov//2, 
+                                                                            progressbar=False)
 
         return self
     
@@ -369,57 +237,7 @@ class RobustChangeDetection(BaseEstimator, TransformerMixin):
     
     def fit_transform(self, X: ArrayLike, y=None):
         return self.fit(X).transform(X)
-        
-
-# class ChangeDetection(BaseEstimator, TransformerMixin):
-#     """Test for change detection using the covariance matrix of the SAR image."""
-
-#     def __init__(self, ENL: int, n_jobs: int = 1):
-#         self.n_jobs = n_jobs
-#         self.ENL = ENL
     
-#     def fit(self, X: ArrayLike, y=None):
-#         T = X.shape[1]
-#         p = X.shape[2]
-#         n = self.ENL
-#         self.parameters_predict = (T, p, n)
-
-#         self.lnq=np.nan*np.ones(X.shape[0])
-
-#         with Parallel(n_jobs=self.n_jobs) as parallel:
-#             result_lnq = parallel(delayed(self.get_lnq)(X, i, T, p, n) for i in range(X.shape[0]))
-#         for i,lnq in enumerate(result_lnq):
-#             self.lnq[i] = lnq
-
-#         return self
-    
-#     def get_lnq(self, X: ArrayLike, i, T, p, n):
-#         Sigma_0 = np.zeros((p,p))
-#         result_denominator = 0
-#         for t in range(T):
-#             Sigma_t = n*X[i,t]
-#             Sigma_0 = Sigma_0 + Sigma_t
-#             result_denominator = result_denominator + np.log(np.abs(np.linalg.det(Sigma_t)))
-#         return n*(p*T*np.log(T) + result_denominator - T*np.log(np.abs(np.linalg.det(Sigma_0))))
-    
-#     def transform(self, X: ArrayLike):
-#         return self.lnq
-
-#     def predict(self, X: ArrayLike):
-#         chi2 = scipy.stats.chi2.cdf
-#         T, p, n = self.parameters_predict
-#         f = (T-1)*(p**2)
-#         rho = 1 - (2*p**2-1)/(6*(T-1)*p)*(T/n-1/(n*T))
-#         omega_2 = (p**2)*(p**2-1)/(24*rho**2)*(T/(n**2)-1/(n*T)**2) -\
-#                 (p**2)*(T-1)/4 * (1 - 1/rho)**2
-#         Z = -2*rho*self.lnq
-#         return chi2(Z, df=f) + omega_2*(chi2(Z, df=f+4) - chi2(Z, df=f))
-
-#     def fit_transform(self, X: ArrayLike, y=None):
-#         return self.fit(X).transform(X)
-    
-#     def fit_predict(self, X: ArrayLike, y=None):
-#         return self.fit(X).predict(X)
 
 class DataLoading(object):
     """Load the data from path."""
@@ -608,9 +426,14 @@ if __name__ == "__main__":
     n_jobs_cov = int(args.cores)
     
     # Pipelines definition
-    if args.robust:
+    if args.robust == 1:
         pipeline = Pipeline([
-            ('robust_change_detection', RobustChangeDetection(window_size=window_size, threshold=0.95, n_jobs_cov = n_jobs_cov, tol=0.01, iter_max=15, scale="log"))
+            ('robust_change_detection', RobustChangeDetection(window_size=window_size, threshold=0.95, n_jobs_cov = n_jobs_cov, tol=0.01, iter_max=3, scale="log"))
+            ],
+            verbose=False)
+    elif args.robust == 2:
+        pipeline = Pipeline([
+            ('logdiff_change_detection', LogDiffChangeDetection(threshold=0.95, repeat=100))
             ],
             verbose=False)
     else:
