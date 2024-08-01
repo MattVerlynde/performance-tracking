@@ -64,6 +64,7 @@ def plot_correlation_matrix(data, storage_path):
         height=1000
     )
     fig.write_html(os.path.join(storage_path, "correlation_matrix.html"), include_mathjax='cdn')
+    fig.write_image(os.path.join(storage_path, "correlation_matrix.png"))
 
 
     methods = sorted(data['Method'].unique())
@@ -76,6 +77,7 @@ def plot_correlation_matrix(data, storage_path):
         for j in range(len(methods)):
             data_corr = data_sorted.loc[(data['Number images'] == n_images[i]) & (data['Method'] == methods[j])].copy().drop(['Method', 'Number images'],axis=1)
             if not data_corr.empty:
+
                 fig.add_trace(go.Heatmap(
                     z=np.corrcoef(data_corr.values.T), 
                     x=data_corr.columns, 
@@ -84,9 +86,20 @@ def plot_correlation_matrix(data, storage_path):
                     zmin=-1, zmax=1, 
                     colorbar=dict(title="Correlation coefficient")
                     ), row=i+1, col=j+1)
+                
+                fig.update_xaxes(showticklabels=False, row=i+1, col=j+1)
+                fig.update_yaxes(showticklabels=False, row=i+1, col=j+1)
     
     fig.for_each_annotation(lambda a:  a.update(y = -0.2) if a.text in n_images else a.update(x = -0.07) if a.text in methods else())
+    for i in range(len(n_images)):
+        fig.update_yaxes(showticklabels=True, row=i+1, col=1)
+    for j in range(len(methods)):
+        fig.update_xaxes(showticklabels=True, row=len(n_images), col=j+1)
+    
     fig.write_html(os.path.join(storage_path, "correlation_matrices.html"), include_mathjax='cdn')
+    fig.write_image(os.path.join(storage_path, "correlation_matrices.png"))
+
+    
 
 
 
