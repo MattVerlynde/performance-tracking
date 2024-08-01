@@ -49,7 +49,6 @@ def analyse_stats(data):
 
     scaler = StandardScaler()
     data_scaled = pd.DataFrame(scaler.fit_transform(data))
-    data_scaled = data_scaled.dropna(axis=0)
     data_scaled.columns = data.columns
 
     pca = PCA()
