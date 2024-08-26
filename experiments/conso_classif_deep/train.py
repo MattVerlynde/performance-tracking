@@ -21,16 +21,25 @@ import numpy as np
 np.random.seed(SEED)
 
 import tensorflow as tf
+tf.compat.v1.enable_eager_execution()
 tf.set_random_seed(SEED)
 
-import sys
-print(sys.path)
-sys.path.append('performance-tracking/..')
+print(tf.test.is_gpu_available())
 
+# gpus = tf.config.experimental.list_physical_devices('GPU')
+# for gpu in gpus:
+#     tf.config.experimental.set_memory_growth(gpu, True)
+
+
+from utils import get_metrics
+
+import sys
+sys.path.insert(0, '/home/verlyndem/Documents/bigearthnet-models-tf') 
+
+print(sys.path)
 import os
 import argparse
 from BigEarthNet import BigEarthNet
-from utils import get_metrics
 import json
 import importlib
 
@@ -93,7 +102,7 @@ def run_model(args, storage_path):
                 model_saver.save(sess, os.path.join(storage_path, 'models', 'iteration'), iteration_idx)
             
             # we do periodic validation after each epoch
-            if iteration_idx % int(np.ceil(4*float(args['training_size']) / args['batch_size'])) == 0:
+            if iteration_idx % int(np.floor(nb_iteration/4)) == 0:
                 val_iterator = BigEarthNet(
                     args['val_tf_record_files'], 
                     args['batch_size'], 
@@ -127,7 +136,9 @@ if __name__ == "__main__":
     parser.add_argument("--storage_path", type=str, required=True)
     parser_args = parser.parse_args()
 
-    with open('configs/base.json', 'rb') as f:
+    print("Entered train.py")
+
+    with open('configs_conso/base.json', 'rb') as f:
         args = json.load(f)
 
     with open(os.path.realpath(parser_args.configs), 'rb') as f:

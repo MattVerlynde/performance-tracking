@@ -8,6 +8,7 @@
 # Version: 1.0.1
 
 import tensorflow as tf
+tf.compat.v1.enable_eager_execution()
 
 def get_metrics(labels, predictions, probabilities):
     labels = tf.cast(labels, tf.float64)
@@ -131,20 +132,20 @@ def get_metrics(labels, predictions, probabilities):
             macro_f2_score_class_avg = tf.reduce_mean(tf.stack(macro_f2_score_class))
             macro_f0_5_score_class_avg = tf.reduce_mean(tf.stack(macro_f0_5_score_class))
 
-        # Hamming Loss
-        hamming_loss = tf.divide(
-            tf.reduce_sum(
-                tf.cast(
-                    tf.logical_xor(
-                        tf.cast(predictions, tf.bool), 
-                        tf.cast(labels, tf.bool)
-                    ), 
-                    tf.float64
-                ),
-                1
-            ), 
-            tf.cast(nb_class, tf.float64)
-        )
+        # # Hamming Loss
+        # hamming_loss = tf.divide(
+        #     tf.reduce_sum(
+        #         tf.cast(
+        #             tf.logical_xor(
+        #                 tf.cast(predictions, tf.bool), 
+        #                 tf.cast(labels, tf.bool)
+        #             ), 
+        #             tf.float64
+        #         ),
+        #         1
+        #     ), 
+        #     tf.cast(nb_class, tf.float64)
+        # )
 
         # Subset accuracy
         subset_accuracy = tf.cast(tf.reduce_all(tf.equal(predictions, labels), 1), tf.float64)
@@ -173,94 +174,94 @@ def get_metrics(labels, predictions, probabilities):
         col_indices = tf.argmax(probabilities, axis = 1, output_type=tf.int32)  
         one_error = tf.cast(tf.equal(tf.gather_nd(labels, tf.stack([row_indices, col_indices], axis = 1)), zero), tf.float64)
 
-        # Coverage
-        ranking = tf.reduce_sum(
-            tf.cast(
-                tf.less_equal(
-                        tf.tile(tf.expand_dims(probabilities, -1), [1, 1, nb_class]),
-                        tf.reshape(
-                            tf.tile(
-                                probabilities, 
-                                [1, nb_class]
-                            ), 
-                        [nb_ins, nb_class, nb_class]
-                        )
-                    ),
-                tf.float64
-            ),
-            2
-        )
-        coverage = tf.reduce_max(
-            tf.where(
-                tf.not_equal(labels, zero), 
-                x = ranking, 
-                y = tf.zeros(dtype=tf.float64, shape=[nb_ins, nb_class])
-            ), 
-            1
-        )
+        # # Coverage
+        # ranking = tf.reduce_sum(
+        #     tf.cast(
+        #         tf.less_equal(
+        #                 tf.tile(tf.expand_dims(probabilities, -1), [1, 1, nb_class]),
+        #                 tf.reshape(
+        #                     tf.tile(
+        #                         probabilities, 
+        #                         [1, nb_class]
+        #                     ), 
+        #                 [nb_ins, nb_class, nb_class]
+        #                 )
+        #             ),
+        #         tf.float64
+        #     ),
+        #     2
+        # )
+        # coverage = tf.reduce_max(
+        #     tf.where(
+        #         tf.not_equal(labels, zero), 
+        #         x = ranking, 
+        #         y = tf.zeros(dtype=tf.float64, shape=[nb_ins, nb_class])
+        #     ), 
+        #     1
+        # )
 
-        # Ranking Loss
-        one_probs = tf.where(tf.not_equal(labels, zero), x = probabilities, y = tf.ones(dtype=tf.float64, shape=[nb_ins, nb_class]) * 2)
-        zero_probs = tf.where(tf.equal(labels, zero), x = probabilities, y = tf.ones(dtype=tf.float64, shape=[nb_ins, nb_class]) * -1)
-        ranking_loss = tf.where(
-                            tf.equal(label_cardinality * tf.reduce_sum(tf.cast(tf.equal(labels, zero), tf.float64), 1), zero), 
-                            x = tf.zeros(dtype=tf.float64, shape=nb_ins),
-                            y = tf.divide(
-                                    tf.reduce_sum(  
-                                        tf.cast(
-                                            tf.less_equal(
-                                                    tf.tile(tf.expand_dims(one_probs, -1), [1, 1, nb_class]), 
-                                                    tf.reshape(
-                                                        tf.tile(zero_probs, [1, nb_class]), 
-                                                        [nb_ins, nb_class, nb_class]
-                                                    )
-                                                ),
-                                            tf.float64
-                                        ), 
-                                        [1,2]
-                                    ), 
-                                    label_cardinality * tf.reduce_sum(tf.cast(tf.equal(labels, zero), tf.float64), 1)
-                                )
-                            )
-        # Label Ranking Average Precision
-        one_ranking_lower = tf.where(
-            tf.equal(labels, zero), 
-            x = tf.ones(dtype=tf.float64, shape=[nb_ins, nb_class]) * 100, 
-            y = ranking
-        )
+        # # Ranking Loss
+        # one_probs = tf.where(tf.not_equal(labels, zero), x = probabilities, y = tf.ones(dtype=tf.float64, shape=[nb_ins, nb_class]) * 2)
+        # zero_probs = tf.where(tf.equal(labels, zero), x = probabilities, y = tf.ones(dtype=tf.float64, shape=[nb_ins, nb_class]) * -1)
+        # ranking_loss = tf.where(
+        #                     tf.equal(label_cardinality * tf.reduce_sum(tf.cast(tf.equal(labels, zero), tf.float64), 1), zero), 
+        #                     x = tf.zeros(dtype=tf.float64, shape=nb_ins),
+        #                     y = tf.divide(
+        #                             tf.reduce_sum(  
+        #                                 tf.cast(
+        #                                     tf.less_equal(
+        #                                             tf.tile(tf.expand_dims(one_probs, -1), [1, 1, nb_class]), 
+        #                                             tf.reshape(
+        #                                                 tf.tile(zero_probs, [1, nb_class]), 
+        #                                                 [nb_ins, nb_class, nb_class]
+        #                                             )
+        #                                         ),
+        #                                     tf.float64
+        #                                 ), 
+        #                                 [1,2]
+        #                             ), 
+        #                             label_cardinality * tf.reduce_sum(tf.cast(tf.equal(labels, zero), tf.float64), 1)
+        #                         )
+        #                     )
+        # # Label Ranking Average Precision
+        # one_ranking_lower = tf.where(
+        #     tf.equal(labels, zero), 
+        #     x = tf.ones(dtype=tf.float64, shape=[nb_ins, nb_class]) * 100, 
+        #     y = ranking
+        # )
 
-        one_ranking_greater = tf.where(
-            tf.equal(labels, zero), 
-            x = tf.zeros(dtype=tf.float64, shape=[nb_ins, nb_class]) * -1, 
-            y = ranking
-        )
+        # one_ranking_greater = tf.where(
+        #     tf.equal(labels, zero), 
+        #     x = tf.zeros(dtype=tf.float64, shape=[nb_ins, nb_class]) * -1, 
+        #     y = ranking
+        # )
 
-        label_ranking_avg_precision = tf.where(
-            tf.equal(tf.reduce_sum(labels,1), zero),
-            x = tf.zeros(dtype=tf.float64, shape=nb_ins),
-            y = tf.divide(
-                tf.reduce_sum(
-                    tf.divide(
-                        tf.reduce_sum(
-                            tf.cast(
-                                tf.less_equal(
-                                    tf.tile(tf.expand_dims(one_ranking_lower, -1), [1, 1, nb_class]),
-                                    tf.reshape(
-                                        tf.tile(one_ranking_greater, [1, nb_class]), 
-                                        [nb_ins, nb_class, nb_class]
-                                    )
-                                ),
-                                tf.float64
-                            ),
-                            1
-                        ),
-                        ranking
-                    ),
-                    1
-                ),
-                tf.reduce_sum(labels,1)
-            )
-        )
+        # label_ranking_avg_precision = tf.where(
+        #     tf.equal(tf.reduce_sum(labels,1), zero),
+        #     x = tf.zeros(dtype=tf.float64, shape=nb_ins),
+        #     y = tf.divide(
+        #         tf.reduce_sum(
+        #             tf.divide(
+        #                 tf.reduce_sum(
+        #                     tf.cast(
+        #                         tf.less_equal(
+        #                             tf.tile(tf.expand_dims(one_ranking_lower, -1), [1, 1, nb_class]),
+        #                             tf.reshape(
+        #                                 tf.tile(one_ranking_greater, [1, nb_class]), 
+        #                                 [nb_ins, nb_class, nb_class]
+        #                             )
+        #                         ),
+        #                         tf.float64
+        #                     ),
+        #                     1
+        #                 ),
+        #                 ranking
+        #             ),
+        #             1
+        #         ),
+        #         tf.reduce_sum(labels,1)
+        #     )
+        # )
 
     with tf.variable_scope('statistics'):
         tf.summary.histogram('number_of_labels', label_cardinality)
@@ -273,14 +274,14 @@ def get_metrics(labels, predictions, probabilities):
             ('sample_f1_score', sample_f1_score), 
             ('sample_f2_score',sample_f2_score), 
             ('sample_f0_5_score', sample_f0_5_score), 
-            ('hamming_loss', hamming_loss),
+            # ('hamming_loss', hamming_loss),
             ('subset_accuracy', subset_accuracy),
             ('sample_accuracy', sample_accuracy),
             ('one_error', one_error),
-            ('coverage', coverage),
-            ('label_cardinality', label_cardinality),
-            ('ranking_loss', ranking_loss),
-            ('label_ranking_avg_precision', label_ranking_avg_precision)
+            # ('coverage', coverage),
+            # ('label_cardinality', label_cardinality),
+            # ('ranking_loss', ranking_loss),
+            # ('label_ranking_avg_precision', label_ranking_avg_precision)
         ]
 
     metrics_list_to_accum = [

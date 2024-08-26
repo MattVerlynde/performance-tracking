@@ -13,10 +13,12 @@
 from __future__ import print_function
 import numpy as np
 import tensorflow as tf
-import subprocess, time, os
+import subprocess, time, os, sys
 import argparse
-from BigEarthNet import BigEarthNet
 from utils import get_metrics
+
+sys.path.insert(0, '/home/verlyndem/Documents/bigearthnet-models-tf') 
+from BigEarthNet import BigEarthNet
 import json
 import importlib
 
