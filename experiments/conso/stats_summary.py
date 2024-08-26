@@ -26,6 +26,9 @@ from matplotlib.patches import Circle, Ellipse, Patch
 from matplotlib.colors import Colormap
 import seaborn as sns
 
+# Set default font size
+plt.rcParams.update({'font.size': 18})
+
 from sklearn.linear_model import LinearRegression
 
 import warnings
@@ -57,11 +60,12 @@ def plot_frugality_score(perf, conso, legends, storage_path, title):
         df[legend] = frugality_score
         df["slope"] = slope
 
-    fig = px.line(df, x = w, y = legend_unique, title = "Frugality score", hover_data = "slope")
+    fig = px.line(df, x = w, y = legend_unique, hover_data = "slope")
     fig.update_xaxes(title_text="w")
     fig.update_yaxes(title_text="Frugality score")
     fig.update_layout(legend_title_text='Parameters')
     fig.write_image(os.path.join(storage_path, title)+".png")
+    # tikzplotlib.save(os.path.join(storage_path, title)+".tex")
     fig.write_html(os.path.join(storage_path, title)+".html", include_mathjax='cdn')
     
 
@@ -78,15 +82,16 @@ def plot_correlation_matrix(data, storage_path):
     data_sorted = data[sorted(data.columns.values.tolist())]
     data_corr = data_sorted.drop('Method', axis=1)
     
-    fig = px.imshow(np.corrcoef(data_corr.values.T), text_auto=True, color_continuous_scale="RdBu_r", zmin=-1, zmax=1, 
+    fig = px.imshow(np.corrcoef(data_corr.values.T), color_continuous_scale="RdBu_r", zmin=-1, zmax=1, 
                     x = data_corr.columns, y = data_corr.columns,
                     labels=dict(x="Variables", y="Variables", color="Correlation coefficient"))
-    fig.update_xaxes(tickangle=45)
+    fig.update_xaxes(tickangle=90)
     fig.update_layout(
-        title="Correlation matrix",
+        # title="Correlation matrix",
         autosize=False,
         width=1000,
-        height=1000
+        height=1000,
+        font=dict(size=18)
     )
     fig.write_html(os.path.join(storage_path, "correlation_matrix.html"), include_mathjax='cdn')
     fig.write_image(os.path.join(storage_path, "correlation_matrix.png"))
@@ -154,33 +159,42 @@ def plot_pca(eig, data, data_pca, data_legend, eucl_dist1, eucl_dist2, ccircle, 
     """
     legend_labels = []
     with plt.style.context(('seaborn-v0_8-whitegrid')):
-        fig, axs = plt.subplots(1,2, figsize=(16,9))
+        fig, axs = plt.subplots(1,3, figsize=(25,10))
+
         for iax,ax in enumerate(axs):
-            eucl_dist = [eucl_dist1, eucl_dist2][iax]
-            for i,j in enumerate(eucl_dist):
-                # arrow_col = plt.cm.YlOrRd((eucl_dist[i] - np.array(eucl_dist).min())/\
-                #         (np.array(eucl_dist).max() - np.array(eucl_dist).min()) )
-                arrow_col = plt.cm.tab20(i)
-                ax.arrow(0,0, # Arrows start at the origin
-                        ccircle[i][iax],  #0 for PC1
-                        ccircle[i][iax+1],  #1 for PC2
-                        lw = 2, # line width
-                        length_includes_head=True, 
-                        color = arrow_col,
-                        fc = arrow_col,
-                        head_width=0.05,
-                        head_length=0.05)
-                if iax == 0:  # Add legend labels only once
-                    legend_labels.append(data.columns[i])
-            # Draw the unit circle, for clarity
-            circle = Circle((0, 0), 1, facecolor='none', edgecolor='k', linewidth=1, alpha=0.5)
-            ax.add_patch(circle)
-            ax.set_aspect('equal')
-            ax.set_xlabel(f"PCA {iax+1}")
-            ax.set_ylabel(f"PCA {iax+2}")
-    axs[0].legend(legend_labels, loc='upper center', bbox_to_anchor=(0.5, -0.05), ncol=4)
-    plt.tight_layout()
+            if iax == 0:
+                ax.bar(range(1, 11), eig["% variance expliquée"][:10], color="#005556")
+                # chart formatting
+                ax.set_xlabel("PCA dimensions")
+                ax.set_ylabel("Explained variance (%)")
+            else:
+                eucl_dist = [eucl_dist1, eucl_dist2][iax-1]
+                for i,j in enumerate(eucl_dist):
+                    # arrow_col = plt.cm.YlOrRd((eucl_dist[i] - np.array(eucl_dist).min())/\
+                    #         (np.array(eucl_dist).max() - np.array(eucl_dist).min()) )
+                    arrow_col = plt.cm.tab20(i)
+                    ax.arrow(0,0, # Arrows start at the origin
+                            ccircle[i][iax-1],  #0 for PC1
+                            ccircle[i][iax],  #1 for PC2
+                            lw = 2, # line width
+                            length_includes_head=True, 
+                            color = arrow_col,
+                            fc = arrow_col,
+                            head_width=0.05,
+                            head_length=0.05)
+                    if iax == 1:  # Add legend labels only once
+                        legend_labels.append(data.columns[i])
+                # Draw the unit circle, for clarity
+                circle = Circle((0, 0), 1, facecolor='none', edgecolor='k', linewidth=1, alpha=0.5)
+                ax.add_patch(circle)
+                
+    # axs[1].legend(legend_labels, loc='upper center', bbox_to_anchor=(0.5, -0.05), ncol=4)
+    # Create a single legend for the entire figure
+    plt.subplots_adjust(bottom=0.25, left=0.05, right=1, top=1)
+    fig.legend(legend_labels, loc='lower center', bbox_to_anchor=(0.68, 0.03), ncol=4)
+    # plt.tight_layout()
     plt.show()
+    # tikzplotlib.save(os.path.join(storage_path, f"pca_circle_{title_suffix}.tex"))
     fig.savefig(os.path.join(storage_path, f"pca_circle_{title_suffix}.png"))
 
     # Plot PCA representation in correlation circle
@@ -206,7 +220,7 @@ def plot_pca(eig, data, data_pca, data_legend, eucl_dist1, eucl_dist2, ccircle, 
         fig.update_yaxes(range=[-1,1], title_text=f"PCA {iax+2}", row=1, col=iax+1)
     
     fig.update_layout(
-        title="Circle of correlations",
+        # title="Circle of correlations",
         showlegend=False,
         autosize=True
     )
@@ -236,7 +250,7 @@ def plot_pca(eig, data, data_pca, data_legend, eucl_dist1, eucl_dist2, ccircle, 
                         color="Parameters",
                         labels={0: f"Dimension 1 ({eig['% variance expliquée'][0]}%)", 1: f"Dimension 2 ({eig['% variance expliquée'][1]}%)", 2: f"Dimension 3 ({eig['% variance expliquée'][2]}%)"},)
     fig.update_layout(
-        title=f"Premiers plans factoriels ({np.sum(eig['% variance expliquée'][0:3])})", 
+        # title=f"Premiers plans factoriels ({np.sum(eig['% variance expliquée'][0:3])})", 
         legend=dict(title="Parameters")
     )
     fig.write_html(os.path.join(storage_path, f"pca_{title_suffix}.html"), include_mathjax='cdn')
@@ -268,8 +282,19 @@ def plot_parameter_distrib(data, storage_path, performance_metric):
             sns.scatterplot(sample, x = "Energy (CodeCarbon)", y = performance_metric, hue = "Legend", alpha = 1, palette = "colorblind")
             ax.set_xlabel("Energy measured with CodeCarbon (kWh)")
             ax.set_ylabel(performance_metric)
-            ax.set_title(f"Plotting energy vs {performance_metric} for {int(n_images)} images with method {int(method)}", ha='left', fontsize=12, loc='left')
+            # ax.set_title(f"Plotting energy vs {performance_metric} for {int(n_images)} images with method {int(method)}", ha='left', fontsize=16, loc='left')
+            # Get current axis limits
+            x_min, x_max = plt.gca().get_xlim()
+            y_min, y_max = plt.gca().get_ylim()
+
+            # Add space by extending the limits
+            x_padding = (x_max - x_min) * 0.05  # 5% padding
+            y_padding = (y_max - y_min) * 0.05  # 5% padding
+
+            plt.gca().set_xlim(x_min - x_padding, x_max + x_padding)
+            plt.gca().set_ylim(y_min - y_padding, y_max + y_padding)
             fig.savefig(os.path.join(storage_path, f"perf_energy_ellipse_seaborn_{int(n_images)}images_method{int(method)}.png"), bbox_inches='tight')
+            # tikzplotlib.save(os.path.join(storage_path, f"perf_energy_ellipse_seaborn_{int(n_images)}images_method{int(method)}.tex"))
             fig.show()
 
             fig_plotly = px.scatter(x=sample["Energy (CodeCarbon)"]/(3.6*1e6), y=sample[performance_metric], color=sample['Legend'])
@@ -347,7 +372,7 @@ def plot_stats(storage_path, output_path):
     print("Plotting T-SNE representation")
 
     fig = px.scatter(pd.DataFrame.join(pd.DataFrame(data_tsne), data_legend['Parameters']), color="Parameters", x=0, y=1, 
-        title=f"t-SNE visualization (KL divergence: {tsne_div})", 
+        # title=f"t-SNE visualization (KL divergence: {tsne_div})", 
         labels={0: "Dimension 1", 1: "Dimension 2"})
     
     fig.write_html(os.path.join(storage_path, "tsne.html"), include_mathjax='cdn')    
@@ -363,13 +388,14 @@ def plot_stats(storage_path, output_path):
     sns.scatterplot(x = data["Duration"], y = data[performance_metric], hue = data_legend['Parameters'], alpha = 1, palette = "colorblind")
     ax.set_xlabel("Duration (s)")
     ax.set_ylabel(performance_metric)
-    ax.set_title(f"Plotting duration vs {performance_metric}", ha='left', fontsize=12, loc='left')
-    fig.savefig(os.path.join(storage_path, f"duration_performance.png"), bbox_inches='tight')
+    # ax.set_title(f"Plotting duration vs {performance_metric}", ha='left', fontsize=16, loc='left')
+    fig.savefig(os.path.join(storage_path, "duration_performance.png"), bbox_inches='tight')
+    # tikzplotlib.save(os.path.join(storage_path, "duration_performance.tex"))
     fig.show()
 
     fig, ax = plt.subplots(1, 1, figsize=(16,8))
     fig = px.scatter(x = data["Duration"], y = data[performance_metric], color = data_legend['Parameters'], color_discrete_sequence=px.colors.qualitative.Dark24,
-               title = f"Plotting duration vs {performance_metric}",
+            #    title = f"Plotting duration vs {performance_metric}",
                labels=dict(x="Duration (s)", y=performance_metric, color="Parameters"))
     fig.write_html(os.path.join(storage_path, f"duration_performance.html"), include_mathjax='cdn')
 
@@ -397,7 +423,7 @@ def plot_stats(storage_path, output_path):
     print(score)
 
     fig = px.scatter(x = conso_plug, y = conso_codecarbon,
-               title = "Energy measurement comparison " + score,
+            #    title = "Energy measurement comparison " + score,
                error_x = errors)
     fig.add_trace(go.Scatter(x = conso_plug, y = regress.reshape(-1), mode = 'lines', line_color = "black", name = equation))
     fig.update_xaxes(title = "Energy measured by the plug (kWh)")
