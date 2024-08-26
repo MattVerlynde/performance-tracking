@@ -54,6 +54,9 @@ def make_table(results):
         df.drop(df.columns[0:5],axis=1,inplace=True)
         df[5] = pd.to_datetime(df[5]).dt.strftime("%d/%m/%Y %H:%M:%S")
         df_list.append(df)
+    
+    command = f"rm {results}"
+    subprocess.run(command, shell=True)
 
     return df_list
 

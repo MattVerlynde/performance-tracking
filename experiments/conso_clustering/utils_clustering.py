@@ -146,7 +146,7 @@ if __name__ == "__main__":
     parser.add_argument("--data_path", type=str, default="data/Scene_1/Scene_1_0.npy")
     parser.add_argument("--n_jobs", type=int, default=-1)
     parser.add_argument("--max_iter", type=int, default=100)
-    parser.add_argument("--small_dataset", type=bool, default=False)
+    parser.add_argument("--small_dataset", type=bool, default=True)
     parser.add_argument("--estimator", type=str, default="scm")
     parser.add_argument("--n_clusters", type=int, default=4)
     parser.add_argument("--number_run", "-n", type=str, default="")
