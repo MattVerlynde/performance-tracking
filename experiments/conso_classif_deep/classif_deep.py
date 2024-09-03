@@ -1,30 +1,28 @@
 import os
 import argparse
 import subprocess
+import pandas as pd
 
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    # parser.add_argument("--image", '-i', type=str, default='/home/verlyndem/Data/Selection/Scene_1/Scene_1_0.npy')
-    # parser.add_argument("--window", '-w', type=int, required=True)
-    # parser.add_argument("--cores", '-c', type=float, required=True)
-    # parser.add_argument("--n_clusters", type=int, default=2)
-    parser.add_argument("--number_run", "-n", type=int, default=1)
-    parser.add_argument("--storage_path", type=str, required=True)
-    parser.add_argument("--dataset_path", type=str, required=True)
-    parser.add_argument('--configs', type=str, help= 'json config file')
-
+    parser.add_argument("--model", '-m', type=str, default='ShortCNN')
+    parser.add_argument("--epochs", '-e', type=int, default=10)
+    parser.add_argument("--optim", '-o', type=str, default='SGD')
+    parser.add_argument("--lr", type=int, default=1e-3)
+    parser.add_argument("--batch", '-b', type=int, default=256)
+    parser.add_argument("--count", type=int, default=0)
+    parser.add_argument("--rgb", type=int, default=1)
     args = parser.parse_args()
+
+    args.count = "--count" if args.count else "--no-count"
+    args.rgb = "--rgb" if args.rgb else "--no-rgb"
 
     results_path = os.path.join(args.storage_path, "results.txt")
     times_path = os.path.join(args.storage_path, "times.txt")
 
-    os.makedirs(os.path.join(args.storage_path, "output"))
+    os.makedirs(os.path.join(args.storage_path, "output"), exist_ok=True)
 
-    command = 'bash performance-tracking/experiments/conso_classif_deep/simulation_metrics_exec.sh {} {} {} python performance-tracking/experiments/conso_classif_deep/train.py --configs {} --storage_path {}'.format(results_path, times_path, args.number_run, args.configs, args.storage_path)
-    print(command)
-    os.system(command)
+    command = f"bash performance-tracking/experiments/conso_classif_deep/simulation_metrics_exec.sh {results_path} {times_path} {args.number_run} python3 train.py --model {args.model} --epochs {args.epochs} --optim {args.optim} --lr {args.lr} --batch {args.batch} {args.count} {args.rgb} --storage_path {args.storage_path}"
 
-    # command = 'python performance-tracking/experiments/conso_classif_deep/eval.py --settings {} --storage_path {}'.format(args.configs, args.storage_path)
-    # os.system(command)
