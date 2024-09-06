@@ -17,6 +17,7 @@ import pandas as pd
 from plotly.subplots import make_subplots
 import plotly.express as px
 import plotly.graph_objects as go
+import tikzplotlib
 
 from get_stats import get_stats
 from analyse_stats import analyse_stats 
@@ -33,7 +34,7 @@ from sklearn.linear_model import LinearRegression
 
 import warnings
 
-def plot_frugality_score(perf, conso, legends, storage_path, title):
+def plot_frugality_score(perf, conso, legends, storage_path, title, factor=1):
     """Function to plot data distribution along the performance and energy consumptions axes.
 
     Parameters
@@ -54,7 +55,7 @@ def plot_frugality_score(perf, conso, legends, storage_path, title):
     df = pd.DataFrame()
     for legend in legend_unique:
         sample_perf = np.mean(perf[legends == legend])
-        sample_conso = np.mean(conso[legends == legend])
+        sample_conso = np.mean(conso[legends == legend])*factor
         slope = 1 / (1 + 1/sample_conso)
         frugality_score = np.ones(w.shape)*sample_perf - w * slope
         df[legend] = frugality_score
@@ -64,9 +65,18 @@ def plot_frugality_score(perf, conso, legends, storage_path, title):
     fig.update_xaxes(title_text="w")
     fig.update_yaxes(title_text="Frugality score")
     fig.update_layout(legend_title_text='Parameters')
-    fig.write_image(os.path.join(storage_path, title)+".png")
-    # tikzplotlib.save(os.path.join(storage_path, title)+".tex")
-    fig.write_html(os.path.join(storage_path, title)+".html", include_mathjax='cdn')
+    fig.write_html(os.path.join(storage_path, title+ str(factor))+".html", include_mathjax='cdn')
+
+    for legend in df.columns:
+        plt.plot(w, df[legend])
+    plt.xlabel("w")
+    plt.ylabel("Frugality score")
+    plt.legend(legend_unique)
+    tikzplotlib.save(os.path.join(storage_path, title+ str(factor))+".tex")
+    plt.savefig(os.path.join(storage_path, title+ str(factor))+".png")
+
+    
+    
     
 
 def plot_correlation_matrix(data, storage_path):
@@ -101,7 +111,7 @@ def plot_correlation_matrix(data, storage_path):
     n_images = sorted(data['Number images'].unique())
     fig = make_subplots(rows=len(n_images), cols=len(methods),
                         column_titles = [f"Method {int(x)}" for x in methods],
-                        row_titles = [f"{int(x)} images" for x in n_images])
+                        row_titles = [f"Image {int(x+1)}" for x in range(len(n_images))])
 
     for i in range(len(n_images)):
         for j in range(len(methods)):
@@ -124,8 +134,13 @@ def plot_correlation_matrix(data, storage_path):
     for i in range(len(n_images)):
         fig.update_yaxes(showticklabels=True, row=i+1, col=1)
     for j in range(len(methods)):
-        fig.update_xaxes(showticklabels=True, row=len(n_images), col=j+1)
+        fig.update_xaxes(showticklabels=True, row=len(n_images), col=j+1, tickangle=45)
     
+    fig.update_layout(
+        width=2000,
+        height=2400,
+        font=dict(size=35))
+    fig.update_annotations(font_size=50)
     fig.write_html(os.path.join(storage_path, "correlation_matrices.html"), include_mathjax='cdn')
     fig.write_image(os.path.join(storage_path, "correlation_matrices.png"))
 
@@ -187,11 +202,13 @@ def plot_pca(eig, data, data_pca, data_legend, eucl_dist1, eucl_dist2, ccircle, 
                 # Draw the unit circle, for clarity
                 circle = Circle((0, 0), 1, facecolor='none', edgecolor='k', linewidth=1, alpha=0.5)
                 ax.add_patch(circle)
+                ax.set_xlabel(f"Dimension {iax}")
+                ax.set_ylabel(f"Dimension {iax+1}")
                 
     # axs[1].legend(legend_labels, loc='upper center', bbox_to_anchor=(0.5, -0.05), ncol=4)
     # Create a single legend for the entire figure
-    plt.subplots_adjust(bottom=0.25, left=0.05, right=1, top=1)
-    fig.legend(legend_labels, loc='lower center', bbox_to_anchor=(0.68, 0.03), ncol=4)
+    plt.subplots_adjust(bottom=0.3, left=0.05, right=1, top=1)
+    fig.legend(legend_labels, loc='lower center', bbox_to_anchor=(0.68, 0.03), ncol=4, prop={'size': 20})
     # plt.tight_layout()
     plt.show()
     # tikzplotlib.save(os.path.join(storage_path, f"pca_circle_{title_suffix}.tex"))
@@ -293,8 +310,50 @@ def plot_parameter_distrib(data, storage_path, performance_metric):
 
             plt.gca().set_xlim(x_min - x_padding, x_max + x_padding)
             plt.gca().set_ylim(y_min - y_padding, y_max + y_padding)
+
             fig.savefig(os.path.join(storage_path, f"perf_energy_ellipse_seaborn_{int(n_images)}images_method{int(method)}.png"), bbox_inches='tight')
             # tikzplotlib.save(os.path.join(storage_path, f"perf_energy_ellipse_seaborn_{int(n_images)}images_method{int(method)}.tex"))
+            fig.show()
+
+            grouped = sample.groupby("Legend")
+            means = grouped.mean()
+            errors = grouped.std()
+            fig, ax = plt.subplots(1, 1, figsize=(16, 8))
+            # Scatterplot for the mean values with error bars
+            pal = sns.color_palette('colorblind', means.shape[0])
+            pal.as_hex()
+            # Create legend
+            color_map = dict(zip(means.index, pal))
+            for i, row in means.iterrows():
+                ax.errorbar(
+                    row["Energy (CodeCarbon)"] / (3.6 * 1e6),  # Convert energy to kWh
+                    row[performance_metric],
+                    xerr=errors.loc[i]["Energy (CodeCarbon)"] / (3.6 * 1e6),  # Error in x (energy)
+                    yerr=errors.loc[i][performance_metric],  # Error in y (performance metric)
+                    fmt='',  # 'o' for scatter plot points
+                    ecolor="black",  # Error bar color
+                    elinewidth=2,  # Error bar line width
+                    capsize=8,  # Error bar cap size
+                    color=color_map[i],  # Point color
+                    label=None,  # No label for the points
+                    markersize=10,  # Point size
+                )
+                ax.scatter(row["Energy (CodeCarbon)"] / (3.6 * 1e6), row[performance_metric], color=color_map[i], s=100, label=i, zorder=10)
+            ax.legend(title="Parameters")
+
+            # Set labels
+            ax.set_xlabel("Energy measured with CodeCarbon (kWh)")
+            ax.set_ylabel(performance_metric)
+            # Extend the axis limits slightly for better visibility
+            x_min, x_max = plt.gca().get_xlim()
+            y_min, y_max = plt.gca().get_ylim()
+            x_padding = (x_max - x_min) * 0.05  # 5% padding
+            y_padding = (y_max - y_min) * 0.05  # 5% padding
+            plt.gca().set_xlim(x_min - x_padding, x_max + x_padding)
+            plt.gca().set_ylim(y_min - y_padding, y_max + y_padding)
+            # Save the figure
+            fig.savefig(os.path.join(storage_path, f"perf_energy_{int(n_images)}images_method{int(method)}.png"), bbox_inches='tight')
+            tikzplotlib.save(os.path.join(storage_path, f"perf_energy_{int(n_images)}images_method{int(method)}.tex"))
             fig.show()
 
             fig_plotly = px.scatter(x=sample["Energy (CodeCarbon)"]/(3.6*1e6), y=sample[performance_metric], color=sample['Legend'])
@@ -383,7 +442,19 @@ def plot_stats(storage_path, output_path):
     plot_parameter_distrib(data, storage_path, performance_metric)
 
     print("Plotting duration vs performance")
+    fig, ax = plt.subplots(1, 1, figsize=(16,8))
+    data_dp = data[data["Window size"] != 1]
+    sns.scatterplot(x = data_dp["Duration"], y = data_dp[performance_metric], hue = data_dp['Threads'], style = data_dp['Method'], size = data_dp['Window size'],
+                    sizes={1:10, 5:50, 7:150, 21:300}, alpha = 1, palette = "colorblind")
+    ax.set_xlabel("Duration (s)")
+    ax.set_ylabel(performance_metric)
+    # ax.set_title(f"Plotting duration vs {performance_metric}", ha='left', fontsize=16, loc='left')
+    fig.savefig(os.path.join(storage_path, "duration_performance_small.png"), bbox_inches='tight')
+    # tikzplotlib.save(os.path.join(storage_path, "duration_performance.tex"))
+    fig.show()
 
+
+    print("Plotting duration vs performance")
     fig, ax = plt.subplots(1, 1, figsize=(16,8))
     sns.scatterplot(x = data["Duration"], y = data[performance_metric], hue = data_legend['Parameters'], alpha = 1, palette = "colorblind")
     ax.set_xlabel("Duration (s)")
@@ -433,8 +504,9 @@ def plot_stats(storage_path, output_path):
     
     print("Plotting frugality score")
 
-    plot_frugality_score(perf = data[performance_metric], conso = data["Energy (CodeCarbon)"], legends = data_legend['Parameters'], storage_path = storage_path,
-                            title = "frugality_score")
+    for factor in [1, 1e-3, 1e-6]:
+        plot_frugality_score(perf = data[performance_metric], conso = data["Energy (CodeCarbon)"], legends = data_legend['Parameters'], storage_path = storage_path,
+                                title = "frugality_score", factor = factor)
 
     print("-"*24)
     print(" "*10+"DONE"+" "*10)
