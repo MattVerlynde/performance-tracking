@@ -24,6 +24,7 @@ sys.path.append('/home/verlyndem/Documents/Tests_change_detection/SAR-change-det
 from get_conso import make_table, query_data, filter_time, get_score 
 from conso_change.get_perf import get_perf_change
 from conso_clustering.get_perf import get_perf_clustering
+from conso_classif_deep.get_perf import get_perf_classif_deep
 
 def get_time(times):
     """
@@ -81,6 +82,8 @@ def get_stats(results, times, storage_path, query=True):
             _, _, perf = get_perf_change(storage_path, result)
         elif "clustering" in storage_path:
             perf = get_perf_clustering(storage_path)
+        elif "classif_deep" in storage_path:
+            perf = get_perf_classif_deep(storage_path)
         df_perf = pd.concat([df_perf, pd.DataFrame([perf])], axis=0, ignore_index=True)
     
     stats = pd.concat([stats, df_perf], axis=1)

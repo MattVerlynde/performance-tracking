@@ -1,0 +1,11 @@
+fixed_args:
+    options:
+        '--model': 'ShortCNN'
+        '--loss': 'BCEWithLogits'
+        '--optim': 'SGD'
+        '--count': 1
+        '--finetune': 0
+        '--batch': 300
+        '--rgb': 1
+        '--epochs': 5
+        '--lr': 0.001
