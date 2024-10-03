@@ -77,16 +77,24 @@ def get_stats(results, times, storage_path, query=True):
 
     df_perf = pd.DataFrame()
     for file in os.listdir(os.path.join(os.path.dirname(results), "output")):
-        result = np.load(os.path.join(os.path.dirname(results), "output", file))
         if "change" in storage_path:
+            result = np.load(os.path.join(os.path.dirname(results), "output", file))
             _, _, perf = get_perf_change(storage_path, result)
+            df_perf = pd.concat([df_perf, pd.DataFrame([perf])], axis=0, ignore_index=True)
         elif "clustering" in storage_path:
+            # result = np.load(os.path.join(os.path.dirname(results), "output", file))
             perf = get_perf_clustering(storage_path)
-        elif "classif_deep" in storage_path:
-            perf = get_perf_classif_deep(storage_path)
-        df_perf = pd.concat([df_perf, pd.DataFrame([perf])], axis=0, ignore_index=True)
+            df_perf = pd.concat([df_perf, pd.DataFrame([perf])], axis=0, ignore_index=True)
+        elif "classif" in storage_path:
+            result = pd.read_csv(os.path.join(os.path.dirname(results), "output", file), index_col=0)
+            perf = result
+            # perf = get_perf_classif_deep(storage_path)
+            print(perf)
+            df_perf = pd.concat([df_perf, perf], axis=0, ignore_index=True)
+        
     
     stats = pd.concat([stats, df_perf], axis=1)
+    print(stats)
     stats["Duration"] = pd.DataFrame(get_time(times))
 
     list_carbon = []
