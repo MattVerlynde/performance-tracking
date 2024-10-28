@@ -1,0 +1,13 @@
+fixed_args:
+    options:
+        '--model': 'InceptionV3'
+        '--loss': 'BCEWithLogits'
+        '--optim': 'SGD'
+        '--count': 1
+        '--finetune': 1
+        '--batch': 200
+        '--rgb': 1
+        '--epochs': 100
+        '--seed': 0
+        '--lr': 0.01
+            
