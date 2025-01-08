@@ -8,6 +8,10 @@ fixed_args:
         '--batch': 200
         '--rgb': 1
         '--epochs': 100
-        '--seed': 0
         '--lr': 0.01
+
+varying_args:
+    range:
+        options:
+            '--seed': [0, 10, 1]
             

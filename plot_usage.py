@@ -47,5 +47,5 @@ if __name__ == "__main__":
 
     fig = plot_usage(results_path, i = 1, measurement='cpu', field='usage_idle', extra_measurement=False, title=f'CPU usage', xaxis_title='Time (s)', yaxis_title='CPU usage (%)', yaxis_range=[0,100])
 
-    fig.write_html(os.path.join(args.storage_path, "usage.png"), include_mathjax='cdn')
+    fig.write_html(os.path.join(args.storage_path, "usage.png"), include_mathjax='cdn', include_plotlyjs='/home/verlyndem/Documents/cahier-labo-these/static/plotly.min.js')
     fig.show()

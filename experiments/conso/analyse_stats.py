@@ -114,4 +114,4 @@ if __name__ == "__main__":
         title=f"Premier plan factoriel ({np.sum(eig['% variance expliquée'][0:1])})", 
         labels={"0": f"Dimension 1 ({eig['% variance expliquée'][0]}%)", "1": f"Dimension 2 ({eig['% variance expliquée'][1]}%)"})
     
-    fig.write_html(os.path.join(args.storage_path, "pca.html"), include_mathjax='cdn')
+    fig.write_html(os.path.join(args.storage_path, "pca.html"), include_mathjax='cdn', include_plotlyjs='/home/verlyndem/Documents/cahier-labo-these/static/plotly.min.js')

@@ -97,6 +97,6 @@ if __name__ == "__main__":
                 color="rgb(0, 0, 0)"
                 )
             )
-            fig.write_html(os.path.join(args.storage_path, "plots", "roc_curve_" + file[25:-4] + ".html"), include_mathjax='cdn')
+            fig.write_html(os.path.join(args.storage_path, "plots", "roc_curve_" + file[25:-4] + ".html"), include_mathjax='cdn', include_plotlyjs='/home/verlyndem/Documents/cahier-labo-these/static/plotly.min.js')
             fig.write_image(os.path.join(args.storage_path, "plots", "roc_curve_" + file[25:-4] + ".png"))
             fig.show()
