@@ -1,0 +1,10 @@
+fixed_args:
+    positional:
+        pos_0: -n
+        pos_1: '50'
+    options:
+        '--n_clusters': 2
+        '--image': 'data/Scene_1small/Scene_1small_0.npy'
+        '--cores': 1
+        '--riemann': 1
+        '--window': 5

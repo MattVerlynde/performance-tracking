@@ -23,99 +23,99 @@ import time
 from tqdm import tqdm
 import warnings
 
-def tyler_estimator_covariance(𝐗, tol=0.001, iter_max=20):
+def tyler_estimator_covariance(X, tol=0.001, iter_max=20):
     """ A function that computes the Tyler Fixed Point Estimator for covariance matrix estimation
         Inputs:
-            * 𝐗 = a matrix of size p*N with each observation along column dimension
+            * X = a matrix of size p*N with each observation along column dimension
             * tol = tolerance for convergence of estimator
             * iter_max = number of maximum iterations
         Outputs:
-            * 𝚺 = the estimate
-            * δ = the final distance between two iterations
+            * Sigma = the estimate
+            * delta = the final distance between two iterations
             * iteration = number of iterations til convergence """
 
     # Initialisation
-    (p, N) = 𝐗.shape
-    δ = np.inf # Distance between two iterations
-    𝚺 = np.eye(p) # Initialise estimate to identity
+    (p, N) = X.shape
+    delta = np.inf # Distance between two iterations
+    Sigma = np.eye(p) # Initialise estimate to identity
     iteration = 0
 
     # Recursive algorithm
-    while (δ>tol) and (iteration<iter_max):
+    while (delta>tol) and (iteration<iter_max):
         
         # Computing expression of Tyler estimator (with matrix multiplication)
-        τ = np.diagonal(𝐗.conj().T@np.linalg.inv(𝚺)@𝐗)
-        𝐗_bis = 𝐗 / np.sqrt(τ)
-        𝚺_new = (p/N) * 𝐗_bis@𝐗_bis.conj().T
+        τ = np.diagonal(X.conj().T@np.linalg.inv(Sigma)@X)
+        X_bis = X / np.sqrt(τ)
+        Sigma_new = (p/N) * X_bis@X_bis.conj().T
 
-        # Imposing trace constraint: Tr(𝚺) = p
-        𝚺_new = p*𝚺_new/np.trace(𝚺_new)
+        # Imposing trace constraint: Tr(Sigma) = p
+        Sigma_new = p*Sigma_new/np.trace(Sigma_new)
 
         # Condition for stopping
-        δ = np.linalg.norm(𝚺_new - 𝚺, 'fro') / np.linalg.norm(𝚺, 'fro')
+        delta = np.linalg.norm(Sigma_new - Sigma, 'fro') / np.linalg.norm(Sigma, 'fro')
         iteration = iteration + 1
 
-        # Updating 𝚺
-        𝚺 = 𝚺_new
+        # Updating Sigma
+        Sigma = Sigma_new
 
     if iteration == iter_max:
         warnings.warn('Recursive algorithm did not converge')
 
-    return (𝚺, δ, iteration)
+    return (Sigma, delta, iteration)
 
-def tyler_estimator_covariance_matandtext(𝐗, tol=0.0001, iter_max=20):
+def tyler_estimator_covariance_matandtext(X, tol=0.0001, iter_max=20):
     """ A function that computes the Modified Tyler Fixed Point Estimator for 
     covariance matrix estimation under problem MatAndText.
         Inputs:
-            * 𝐗 = a matrix of size p*N*T with each saptial observation along column dimension and time
+            * X = a matrix of size p*N*T with each saptial observation along column dimension and time
                 observation along third dimension.
             * tol = tolerance for convergence of estimator
             * iter_max = number of maximum iterations
         Outputs:
-            * 𝚺 = the estimate
-            * δ = the final distance between two iterations
+            * Sigma = the estimate
+            * delta = the final distance between two iterations
             * iteration = number of iterations til convergence """
 
-    (p, N, T) = 𝐗.shape
-    δ = np.inf # Distance between two iterations
-    𝚺 = np.eye(p) # Initialise estimate to identity
+    (p, N, T) = X.shape
+    delta = np.inf # Distance between two iterations
+    Sigma = np.eye(p) # Initialise estimate to identity
     iteration = 0
 
     # Recursive algorithm
-    while (δ>tol) and iteration < iter_max:
+    while (delta>tol) and iteration < iter_max:
 
         # Compute the textures for each pixel using all the dates avalaibe
         τ = 0
-        i𝚺 = np.linalg.inv(𝚺)
+        iSigma = np.linalg.inv(Sigma)
         for t in range(0, T):
-            τ = τ + np.diagonal(𝐗[:,:,t].conj().T@i𝚺@𝐗[:,:,t])
+            τ = τ + np.diagonal(X[:,:,t].conj().T@iSigma@X[:,:,t])
 
         # Computing expression of the estimator
-        𝚺_new = 0
+        Sigma_new = 0
         for t in range(0, T):
-            𝐗_bis = 𝐗[:,:,t] / np.sqrt(τ)
-            𝚺_new = 𝚺_new + (p/N) * 𝐗_bis@𝐗_bis.conj().T
+            X_bis = X[:,:,t] / np.sqrt(τ)
+            Sigma_new = Sigma_new + (p/N) * X_bis@X_bis.conj().T
 
-        # Imposing trace constraint: Tr(𝚺) = p
-        𝚺_new = p*𝚺_new/np.trace(𝚺_new)
+        # Imposing trace constraint: Tr(Sigma) = p
+        Sigma_new = p*Sigma_new/np.trace(Sigma_new)
 
         # Condition for stopping
-        δ = np.linalg.norm(𝚺_new - 𝚺, 'fro') / np.linalg.norm(𝚺, 'fro')
+        delta = np.linalg.norm(Sigma_new - Sigma, 'fro') / np.linalg.norm(Sigma, 'fro')
 
-        # Updating 𝚺
-        𝚺 = 𝚺_new
+        # Updating Sigma
+        Sigma = Sigma_new
         iteration = iteration + 1
 
     if iteration == iter_max:
         warnings.warn('Recursive algorithm did not converge')
 
-    return (𝚺, δ, iteration)
+    return (Sigma, delta, iteration)
 
-def scale_and_shape_equality_robust_statistic(𝐗, args):
+def scale_and_shape_equality_robust_statistic(X, args):
     """ GLRT test for testing a change in the scale or/and shape of 
         a deterministic SIRV model.
         Inputs:
-            * 𝐗 = a (p, N, T) numpy array with:
+            * X = a (p, N, T) numpy array with:
                 * p = dimension of vectors
                 * N = number of Samples at each date
                 * T = length of time series
@@ -123,30 +123,30 @@ def scale_and_shape_equality_robust_statistic(𝐗, args):
         Outputs:
             * the statistic given the observations in input"""
 
-    (p, N, T) = 𝐗.shape
+    (p, N, T) = X.shape
     (tol, iter_max, scale) = args
 
-    # Estimating 𝚺_0 using all the observations
-    (𝚺_0, δ, niter) = tyler_estimator_covariance_matandtext(𝐗, tol, iter_max)
-    i𝚺_0 = np.linalg.inv(𝚺_0)
+    # Estimating Sigma_0 using all the observations
+    (Sigma_0, delta, niter) = tyler_estimator_covariance_matandtext(X, tol, iter_max)
+    iSigma_0 = np.linalg.inv(Sigma_0)
 
     # Some initialisation
-    log_numerator_determinant_terms = T*N*np.log(np.abs(np.linalg.det(𝚺_0)))
+    log_numerator_determinant_terms = T*N*np.log(np.abs(np.linalg.det(Sigma_0)))
     log_denominator_determinant_terms = 0
     𝛕_0 = 0
     log𝛕_t = 0
     # Iterating on each date to compute the needed terms
     for t in range(0,T):
-        # Estimating 𝚺_t
-        (𝚺_t, δ, iteration) = tyler_estimator_covariance(𝐗[:,:,t], tol, iter_max)
+        # Estimating Sigma_t
+        (Sigma_t, delta, iteration) = tyler_estimator_covariance(X[:,:,t], tol, iter_max)
 
         # Computing determinant add adding it to log_denominator_determinant_terms
         log_denominator_determinant_terms = log_denominator_determinant_terms + \
-            N*np.log(np.abs(np.linalg.det(𝚺_t)))
+            N*np.log(np.abs(np.linalg.det(Sigma_t)))
 
         # Computing texture estimation
-        𝛕_0 =  𝛕_0 + np.diagonal(𝐗[:,:,t].conj().T@i𝚺_0@𝐗[:,:,t]) / T
-        log𝛕_t = log𝛕_t + np.log(np.diagonal(𝐗[:,:,t].conj().T@np.linalg.inv(𝚺_t)@𝐗[:,:,t]))
+        𝛕_0 =  𝛕_0 + np.diagonal(X[:,:,t].conj().T@iSigma_0@X[:,:,t]) / T
+        log𝛕_t = log𝛕_t + np.log(np.diagonal(X[:,:,t].conj().T@np.linalg.inv(Sigma_t)@X[:,:,t]))
 
     # Computing quadratic terms
     log_numerator_quadtratic_terms = T*p*np.sum(np.log(𝛕_0))
@@ -159,6 +159,51 @@ def scale_and_shape_equality_robust_statistic(𝐗, args):
     else:
         λ = np.real(log_numerator_determinant_terms - log_denominator_determinant_terms + \
         log_numerator_quadtratic_terms - log_denominator_quadtratic_terms)
+
+    return λ 
+
+
+def scale_and_shape_equality_statistic(X, args):
+    """ GLRT test for testing a change in the scale or/and shape of 
+        a deterministic SIRV model.
+        Inputs:
+            * X = a (p, N, T) numpy array with:
+                * p = dimension of vectors
+                * N = number of Samples at each date
+                * T = length of time series
+            * args = tol, iter_max for Tyler, scale
+        Outputs:
+            * the statistic given the observations in input"""
+
+    (p, N, T) = X.shape
+    (tol, iter_max, scale) = args
+
+    # Some initialisation
+    log_denominator_determinant_terms = 0
+    Sigma_0 = np.eye(p) # Initialise estimate to identity
+
+    # Iterating on each date to compute the needed terms
+    for t in range(0,T):
+        # Estimating Sigma_t
+        Sigma_t = np.eye(p) # Initialise estimate to identity
+        for n in range(0, N):
+            X_bis = X[:,n,t].reshape((p,1))
+            Sigma_t = Sigma_t + (1/N) * X_bis@X_bis.conj().T
+
+        # Computing determinant add adding it to log_denominator_determinant_terms
+        log_denominator_determinant_terms = log_denominator_determinant_terms + \
+            N*np.log(np.abs(np.linalg.det(Sigma_t)))
+
+        Sigma_0 = Sigma_0 + (1/T) * Sigma_t
+
+    log_numerator_determinant_terms = T*N*np.log(np.abs(np.linalg.det(Sigma_0)))
+    
+
+    # Final expression of the statistic
+    if scale=='linear':
+        λ = np.exp(np.real(log_numerator_determinant_terms - log_denominator_determinant_terms))
+    else:
+        λ = np.real(log_numerator_determinant_terms - log_denominator_determinant_terms)
 
     return λ 
 

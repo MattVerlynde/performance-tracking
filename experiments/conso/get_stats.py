@@ -25,6 +25,7 @@ from get_conso import make_table, query_data, filter_time, get_score
 from conso_change.get_perf import get_perf_change
 from conso_clustering.get_perf import get_perf_clustering
 from conso_classif_deep.get_perf import get_perf_classif_deep
+from conso_clustering.get_perf_blob import get_perf_clustering_blob
 
 def get_time(times):
     """
@@ -80,6 +81,8 @@ def get_stats(results, times, storage_path, query=True):
         result = np.load(os.path.join(os.path.dirname(results), "output", file))
         if "change" in storage_path:
             _, _, perf = get_perf_change(storage_path, result)
+        elif "clustering-blob" in storage_path:
+            perf = get_perf_clustering_blob(storage_path)
         elif "clustering" in storage_path:
             perf = get_perf_clustering(storage_path)
         elif "classif_deep" in storage_path:
@@ -96,7 +99,7 @@ def get_stats(results, times, storage_path, query=True):
         codecarbon_results = pd.read_csv(codecarbon_path, header=0).iloc[-1,:]
         carbon = codecarbon_results["emissions"]
         list_carbon.append(carbon)
-        energy_code_carbon = 3.6*1e6*codecarbon_results["energy_consumed"]
+        energy_code_carbon = codecarbon_results["energy_consumed"]*(3.6*1e6)
         list_energy_code_carbon.append(energy_code_carbon)
         
     stats["Emissions"] = pd.Series(list_carbon)

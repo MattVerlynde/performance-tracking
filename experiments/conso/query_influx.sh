@@ -6,14 +6,14 @@ t1=$(tail -n1 $1)
 qcpu="data=from(bucket: \"telegraf_bucket\")
   |> range(start: ${t0}, stop: ${t1})
   |> filter(fn: (r) => r[\"_measurement\"] == \"cpu\")
-  |> filter(fn: (r) => r[\"_field\"] == \"usage_idle\")
+  |> filter(fn: (r) => r[\"_field\"] == \"usage_user\")
   |> filter(fn: (r) => r[\"cpu\"] == \"cpu-total\")
   |> yield()"
 
 qmem="data=from(bucket: \"telegraf_bucket\")
   |> range(start: ${t0}, stop: ${t1})
   |> filter(fn: (r) => r[\"_measurement\"] == \"mem\")
-  |> filter(fn: (r) => r[\"_field\"] == \"free\")
+  |> filter(fn: (r) => r[\"_field\"] == \"used_percent\")
   |> yield()"
 
 qenergy="data=from(bucket: \"telegraf_bucket\")

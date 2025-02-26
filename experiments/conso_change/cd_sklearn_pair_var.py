@@ -31,7 +31,7 @@ from joblib import Parallel, delayed
 import argparse
 import warnings
 
-from helpers.multivariate_images_tool import sliding_windows_treatment_image_time_series_parallel, scale_and_shape_equality_robust_statistic
+from helpers.multivariate_images_tool import sliding_windows_treatment_image_time_series_parallel, scale_and_shape_equality_robust_statistic, scale_and_shape_equality_statistic
 
 
 
@@ -160,6 +160,7 @@ class LogDiffChangeDetection(BaseEstimator, TransformerMixin):
             list_images = os.listdir(path)
 
             image_t0 = np.load(os.path.join(path, list_images[0]))
+            mean_diff = np.zeros(image_t0.shape[:2])
             T = len(list_images)
 
             def log_calc(image):
@@ -169,8 +170,10 @@ class LogDiffChangeDetection(BaseEstimator, TransformerMixin):
 
             for i in range(1,T):
                 image_t1 = log_calc(np.load(os.path.join(path, list_images[i])))
-                image_t1 = image_t0 - image_t1
-            self.result_diff = np.abs(image_t1)
+                mean_diff += image_t0 - image_t1
+                image_t0 = image_t1
+            mean_diff = mean_diff/(T-1)
+            self.result_diff = np.abs(mean_diff)
         
         return self
     
@@ -206,14 +209,14 @@ class RobustChangeDetection(BaseEstimator, TransformerMixin):
         n_r,n_c,p = image.shape[:3]
         multi = self.n_jobs_cov > 1
         T = len(list_images)
-        print(f"Multi: {multi}")
+        # print(f"Multi: {multi}")
 
         function_args = (self.tol, self.iter_max, self.scale)
 
         image=image.reshape((n_r*n_c,p))
         for t in range(1,T):
             image = np.dstack((image, np.load(os.path.join(path, list_images[t])).reshape((n_r*n_c,p))))
-        print(image.shape)
+        
         image=image.reshape((n_r,n_c,p,T))
         self.lambda_ = sliding_windows_treatment_image_time_series_parallel(image, 
                                                                             windows_mask=np.ones((self.window_size, self.window_size)), 
@@ -223,6 +226,85 @@ class RobustChangeDetection(BaseEstimator, TransformerMixin):
                                                                             number_of_threads_rows= self.n_jobs_cov//2, 
                                                                             number_of_threads_columns= self.n_jobs_cov//2, 
                                                                             progressbar=False)
+        
+        # image = image.transpose((3,0,1,2))
+
+        # sliding_window = SlidingWindowVectorize(window_size=self.window_size)
+
+        # image_windows = np.array([sliding_window.fit_transform(image[t]) for t in range(T)])
+        # image_windows = image_windows.transpose((1,2,3,0))
+        # image_windows = image_windows.transpose((0,2,1,3))
+
+        # self.lambda_ = Parallel(n_jobs=self.n_jobs_cov)(
+        #                 delayed(scale_and_shape_equality_robust_statistic)(x, args=(self.tol, self.iter_max, self.scale))
+        #                 for x in image_windows
+        #                 )
+        # self.lambda_ = np.array(self.lambda_).reshape((n_r-2*(self.window_size//2),n_c-2*(self.window_size//2)))
+
+        return self
+    
+    def predict(self, X: ArrayLike):
+        return self.lambda_
+    
+    def transform(self, X: ArrayLike):
+        return self.lambda_
+    
+    def fit_predict(self, X: ArrayLike, y=None):
+        return self.fit(X).predict(X)
+    
+    def fit_transform(self, X: ArrayLike, y=None):
+        return self.fit(X).transform(X)
+    
+class GLRTChangeDetection(BaseEstimator, TransformerMixin):
+    """Test for change detection using the covariance matrix of the SAR image."""
+
+    def __init__(self, window_size: int, threshold: float = 0.95, n_jobs_cov: int = 1, tol: float = 0.001, iter_max: int = 20, scale: str = "linear"):
+        self.threshold = threshold
+        self.window_size = window_size
+        self.ENL = window_size**2
+        self.n_jobs_cov = n_jobs_cov
+        self.tol = tol
+        self.iter_max = iter_max
+        self.scale = scale
+    
+    def fit(self, path: str, X=None, y=None):
+        list_images = os.listdir(path)
+
+        image = np.load(os.path.join(path, list_images[0]))
+        n_r,n_c,p = image.shape[:3]
+        multi = self.n_jobs_cov > 1
+        T = len(list_images)
+        # print(f"Multi: {multi}")
+
+        function_args = (self.tol, self.iter_max, self.scale)
+
+        image=image.reshape((n_r*n_c,p))
+        for t in range(1,T):
+            image = np.dstack((image, np.load(os.path.join(path, list_images[t])).reshape((n_r*n_c,p))))
+        
+        image=image.reshape((n_r,n_c,p,T))
+        self.lambda_ = sliding_windows_treatment_image_time_series_parallel(image, 
+                                                                            windows_mask=np.ones((self.window_size, self.window_size)), 
+                                                                            function_to_compute=scale_and_shape_equality_statistic, 
+                                                                            function_args=function_args, 
+                                                                            multi=multi, 
+                                                                            number_of_threads_rows= self.n_jobs_cov//2, 
+                                                                            number_of_threads_columns= self.n_jobs_cov//2, 
+                                                                            progressbar=False)
+        
+        # image = image.transpose((3,0,1,2))
+
+        # sliding_window = SlidingWindowVectorize(window_size=self.window_size)
+
+        # image_windows = np.array([sliding_window.fit_transform(image[t]) for t in range(T)])
+        # image_windows = image_windows.transpose((1,2,3,0))
+        # image_windows = image_windows.transpose((0,2,1,3))
+
+        # self.lambda_ = Parallel(n_jobs=self.n_jobs_cov)(
+        #                 delayed(scale_and_shape_equality_robust_statistic)(x, args=(self.tol, self.iter_max, self.scale))
+        #                 for x in image_windows
+        #                 )
+        # self.lambda_ = np.array(self.lambda_).reshape((n_r-2*(self.window_size//2),n_c-2*(self.window_size//2)))
 
         return self
     
@@ -284,6 +366,7 @@ class PairwiseRjTest(BaseEstimator, TransformerMixin):
             j_minus_1 = j-1
 
             # Load data
+            
             image_j = DataLoading(os.path.join(path, list_images[j-1])).fit_transform()
             image_j_minus_1 = DataLoading(os.path.join(path, list_images[j_minus_1-1])).fit_transform()
             Sw_j = sliding_window.fit_transform(image_j)
@@ -345,8 +428,8 @@ class PairwiseRjTest(BaseEstimator, TransformerMixin):
     
     def fit_predict(self, X: ArrayLike, y=None):
         return self.fit(X).predict(X)
-    
 
+        
 
 class LabelsToImage(BaseEstimator, TransformerMixin):
     """Predicted labels to image taking into account sliding windows.
@@ -428,7 +511,7 @@ if __name__ == "__main__":
     # Pipelines definition
     if args.robust == 1:
         pipeline = Pipeline([
-            ('robust_change_detection', RobustChangeDetection(window_size=window_size, threshold=0.95, n_jobs_cov = n_jobs_cov, tol=0.01, iter_max=3, scale="log"))
+            ('robust_change_detection', RobustChangeDetection(window_size=window_size, threshold=0.95, n_jobs_cov = n_jobs_cov, tol=0.01, iter_max=2, scale="log"))
             ],
             verbose=False)
     elif args.robust == 2:
@@ -436,6 +519,11 @@ if __name__ == "__main__":
             ('logdiff_change_detection', LogDiffChangeDetection(threshold=0.95, repeat=100))
             ],
             verbose=False)
+    # elif args.robust == 0:
+    #     pipeline = Pipeline([
+    #         ('logdiff_change_detection', GLRTChangeDetection(threshold=0.95, repeat=100))
+    #         ],
+    #         verbose=False)
     else:
         pipeline = Pipeline([
             ('rj_test', PairwiseRjTest(window_size=window_size, n_jobs_cov=n_jobs_cov, return_count=False, threshold=0.95))

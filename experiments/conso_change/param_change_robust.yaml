@@ -3,7 +3,7 @@ fixed_args:
         '--robust': 1
     positional:
         pos_0: -n
-        pos_1: '10'
+        pos_1: '30'
 
 varying_args:
     range:
@@ -13,11 +13,19 @@ varying_args:
     groups:
         - options:
             '--window': 5
+            '--image': 'data/Scene_1small'
+
+        - options:
+            '--window': 5
             '--image': 'data/Scene_2small'
         
         - options:
             '--window': 5
             '--image': 'data/Scene_3small'
+
+        - options:
+            '--window': 7
+            '--image': 'data/Scene_1small'
             
         - options:
             '--window': 7
@@ -26,6 +34,10 @@ varying_args:
         - options:
             '--window': 7
             '--image': 'data/Scene_3small'
+
+        - options:
+            '--window': 21
+            '--image': 'data/Scene_1small'
             
         - options:
             '--window': 21

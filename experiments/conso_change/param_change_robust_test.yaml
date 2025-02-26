@@ -1,0 +1,9 @@
+fixed_args:
+    options: 
+        '--robust': 1
+        '--cores': 12
+        '--window': 5
+        '--image': 'data/Scene_2small'
+    positional:
+        pos_0: -n
+        pos_1: '5'

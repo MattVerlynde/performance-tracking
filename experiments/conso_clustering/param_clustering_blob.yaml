@@ -1,0 +1,44 @@
+fixed_args:
+    positional:
+        pos_0: -n
+        pos_1: '30'
+    options:
+        '--data_seed': 30
+        '--random_seed': 30
+        '--n_clusters': 5
+
+varying_args:
+    groups:
+        # - options:
+        #     '--model': 'k-means'
+        #     '--repeat': 20000
+            
+        # - options:
+        #     '--model': 'k-means++'
+        #     '--repeat': 80000
+            
+        - options:
+            '--model': 'DBSCAN'
+            '--repeat': 16000
+            
+        # - options:
+        #     '--model': 'HDBSCAN'
+        #     '--repeat': 16000
+            
+        # - options:
+        #     '--model': 'OPTICS'
+        #     '--repeat': 400
+            
+        # - options:
+        #     '--model': 'AgglomerativeClustering'
+        #     '--repeat': 8000
+            
+        # - options:
+        #     '--model': 'Ward'
+        #     '--repeat': 8000
+            
+        # - options:
+        #     '--model': 'GMM'
+        #     '--repeat': 100000
+            
+        

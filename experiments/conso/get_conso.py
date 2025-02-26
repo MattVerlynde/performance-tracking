@@ -73,13 +73,14 @@ def filter_time(df,time_path):
     Returns
     -------
     df_list: list
-        List of pandas dataframes
+        List of pandas dataframes for each time interval
     """
     with open(time_path, 'r') as file:
         time_list = file.read().split('\n')
     
     df_list = []
     for i in range(0,len(time_list)-2):
+        # if i != 1:
         t0, t1 = pd.to_datetime(time_list[i]).value, pd.to_datetime(time_list[i+1]).value
         df_time = pd.to_datetime(df.iloc[:,0], dayfirst=True).apply(lambda x: x.value)
         df_inter = df.loc[t0 <= df_time].loc[df_time < t1] 
@@ -106,7 +107,7 @@ def get_integral(t, y, d):
         Integral of the variable over the time interval
     """
     T = t.iloc[1]-t.iloc[0]
-    return T*(y.iloc[1]+y.iloc[0]-2*d)/2
+    return T*(float(y.iloc[1])+float(y.iloc[0])-2*d)/2
 
 def get_score(df_list,time_path):
     """Function to slice an input database using the input timestamps.
@@ -126,7 +127,7 @@ def get_score(df_list,time_path):
     with open(time_path, 'r') as file:
         time_list = file.read().split('\n')
         t0, t1 = pd.to_datetime(time_list[0]).value, pd.to_datetime(time_list[1]).value
-        T = t1-t0
+        T = t1-t0 # Cold time interval in nanoseconds
     
     list_integrals = []
 
@@ -135,13 +136,17 @@ def get_score(df_list,time_path):
         df_list_var = filter_time(df_list[i_var],time_path)
         i_df = 0
         list_integrals_var = []
+        P0 = np.array([[0.1]])
         while i_df < len(df_list_var):
             i_row = 0
             d = 0
             integral = 0
+
+            # df_list_var[i_df].iloc[:,1], P0 = kalmann_filter(df_list_var[i_df].iloc[:,1].astype('float'), P0)
+
             while i_row < len(df_list_var[i_df])-1:
                 x = pd.to_datetime(df_list_var[i_df].iloc[i_row:i_row+2,0], format="%d/%m/%Y %H:%M:%S", dayfirst=True).astype('int')
-                y = df_list_var[i_df].iloc[i_row:i_row+2,1].astype('float')
+                y = df_list_var[i_df].iloc[i_row:i_row+2,1]
                 i_row += 1
                 integral += get_integral(x,y,d)
             if i_df == 0:
@@ -152,7 +157,58 @@ def get_score(df_list,time_path):
         list_integrals.append(list_integrals_var)
         i_var += 1
 
+
     return list_integrals
+
+def kalmann_filter(y, P0):
+    """
+    Function to apply a Kalman filter to a pandas dataframe.
+
+    Parameters
+    ----------
+    list: list
+        Input list with values to filter
+
+    Returns
+    -------
+    list_filtered: list
+        Filtered list
+    """
+
+    T = len(y) - 1
+
+    # Define the state transition matrix
+    F = np.array([[1]])
+
+    # Define the observation matrix
+    H = np.array([[1]])
+
+    # Define the process noise covariance
+    Q = np.array([[0.1]])
+
+    # Define the observation noise covariance
+    R = np.array([[1]])
+
+    # Define the initial state
+    y0 = np.array([y[0]])
+
+    y_filtered = [y0]
+    P = [P0]
+
+    for t in range(T):
+        # Prediction
+        y_filtered.append(F@y[t])
+        P.append(F@P[t]@F.T + Q)
+
+        # Update
+        K = H @ P[t+1] @ H.T @ np.linalg.inv(H @ P[t+1] @ H.T + R)
+        y_filtered[t+1] = y_filtered[t+1] + K @ (y[t+1] - H @ y_filtered[t+1])
+        P[t] = (np.eye(1) - K @ H) @ P[t+1]
+
+    return y_filtered, P[-1]
+
+
+
 
 
 if __name__ == "__main__":

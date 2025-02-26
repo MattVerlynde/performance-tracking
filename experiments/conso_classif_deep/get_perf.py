@@ -34,7 +34,7 @@ def get_perf_classif_deep(storage_path):
     lr = float(paramYaml['parameters']['--lr'])
     model = paramYaml['parameters']['--model']
     rgb = int(paramYaml['parameters']['--rgb'])
-    fine_tune = int(paramYaml['parameters']['--fine-tune'])
+    fine_tune = int(paramYaml['parameters']['--finetune'])
 
     if model == "ShortCNN":
         if rgb:
