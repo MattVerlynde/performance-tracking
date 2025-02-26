@@ -35,6 +35,17 @@ def get_perf_classif_deep(storage_path):
     model = paramYaml['parameters']['--model']
     rgb = int(paramYaml['parameters']['--rgb'])
     fine_tune = int(paramYaml['parameters']['--finetune'])
+<<<<<<< HEAD
+=======
+
+    print(f"Model: {model}")
+    print(f"Batch size: {batch_size}")
+    print(f"Number of epochs: {n_epochs}")
+    print(f"Learning rate: {lr}")
+    print(f"RGB: {rgb}")
+    print(f"Fine-tune: {fine_tune}")
+
+>>>>>>> a2c0c27f3526725ce1370733e5be04c945819ebc
 
     if model == "ShortCNN":
         if rgb:
@@ -51,13 +62,9 @@ def get_perf_classif_deep(storage_path):
     else:
         model = 'Unknown'
 
-    perf = pd.DataFrame()
-    perf["Model"] = model
-    perf["Batch"] = batch_size
-    perf["Epochs"] = n_epochs
-    perf["Learning Rate"] = lr
-
     result_classif = pd.read_csv(os.path.join(storage_path, "output", "scores.csv"))
+
+    perf = result_classif
     
     return perf
 

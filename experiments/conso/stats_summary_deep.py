@@ -65,7 +65,7 @@ def plot_frugality_score(perf, conso, legends, storage_path, title, factor=1):
     fig.update_xaxes(title_text="w")
     fig.update_yaxes(title_text="Frugality score")
     fig.update_layout(legend_title_text='Parameters')
-    fig.write_html(os.path.join(storage_path, title+ str(factor))+".html", include_mathjax='cdn')
+    fig.write_html(os.path.join(storage_path, title+ str(factor))+".html", include_mathjax='cdn', include_plotlyjs='/home/verlyndem/Documents/cahier-labo-these/static/plotly.min.js')
 
     for legend in df.columns:
         plt.plot(w, df[legend])
@@ -90,7 +90,7 @@ def plot_correlation_matrix(data, storage_path):
         Path to the folder to save the different plots*
     """
     data_sorted = data[sorted(data.columns.values.tolist())]
-    data_corr = data_sorted.drop('Method', axis=1)
+    data_corr = data_sorted.drop('Model', axis=1)
     
     fig = px.imshow(np.corrcoef(data_corr.values.T), color_continuous_scale="RdBu_r", zmin=-1, zmax=1, 
                     x = data_corr.columns, y = data_corr.columns,
@@ -103,7 +103,7 @@ def plot_correlation_matrix(data, storage_path):
         height=1000,
         font=dict(size=18)
     )
-    fig.write_html(os.path.join(storage_path, "correlation_matrix.html"), include_mathjax='cdn')
+    fig.write_html(os.path.join(storage_path, "correlation_matrix.html"), include_mathjax='cdn', include_plotlyjs='/home/verlyndem/Documents/cahier-labo-these/static/plotly.min.js')
     fig.write_image(os.path.join(storage_path, "correlation_matrix.png"))
 
 
@@ -113,7 +113,7 @@ def plot_correlation_matrix(data, storage_path):
                         column_titles = [x for x in model])
 
     for i in range(len(n_images)):
-        for j in range(len(methods)):
+        for j in range(len(model)):
             data_corr = data_sorted.loc[data['Model'] == model[j]].copy().drop(['Model'],axis=1)
             if not data_corr.empty:
 
@@ -129,10 +129,10 @@ def plot_correlation_matrix(data, storage_path):
                 fig.update_xaxes(showticklabels=False, row=i+1, col=j+1)
                 fig.update_yaxes(showticklabels=False, row=i+1, col=j+1)
     
-    fig.for_each_annotation(lambda a:  a.update(y = -0.2) if a.text in n_images else a.update(x = -0.07) if a.text in methods else())
+    fig.for_each_annotation(lambda a:  a.update(y = -0.2) if a.text in n_images else a.update(x = -0.07) if a.text in model else())
     for i in range(len(n_images)):
         fig.update_yaxes(showticklabels=True, row=i+1, col=1)
-    for j in range(len(methods)):
+    for j in range(len(model)):
         fig.update_xaxes(showticklabels=True, row=len(n_images), col=j+1, tickangle=45)
     
     fig.update_layout(
@@ -140,7 +140,7 @@ def plot_correlation_matrix(data, storage_path):
         height=500,
         font=dict(size=35))
     fig.update_annotations(font_size=50)
-    fig.write_html(os.path.join(storage_path, "correlation_matrices.html"), include_mathjax='cdn')
+    fig.write_html(os.path.join(storage_path, "correlation_matrices.html"), include_mathjax='cdn', include_plotlyjs='/home/verlyndem/Documents/cahier-labo-these/static/plotly.min.js')
     fig.write_image(os.path.join(storage_path, "correlation_matrices.png"))
 
     
@@ -240,7 +240,7 @@ def plot_pca(eig, data, data_pca, data_legend, eucl_dist1, eucl_dist2, ccircle, 
         showlegend=False,
         autosize=True
     )
-    fig.write_html(os.path.join(storage_path, f"pca_circle_{title_suffix}.html"), include_mathjax='cdn')
+    fig.write_html(os.path.join(storage_path, f"pca_circle_{title_suffix}.html"), include_mathjax='cdn', include_plotlyjs='/home/verlyndem/Documents/cahier-labo-these/static/plotly.min.js')
     
     # Plot data in PCA representation
 
@@ -269,7 +269,7 @@ def plot_pca(eig, data, data_pca, data_legend, eucl_dist1, eucl_dist2, ccircle, 
         # title=f"Premiers plans factoriels ({np.sum(eig['% variance expliquée'][0:3])})", 
         legend=dict(title="Parameters")
     )
-    fig.write_html(os.path.join(storage_path, f"pca_{title_suffix}.html"), include_mathjax='cdn')
+    fig.write_html(os.path.join(storage_path, f"pca_{title_suffix}.html"), include_mathjax='cdn', include_plotlyjs='/home/verlyndem/Documents/cahier-labo-these/static/plotly.min.js')
 
 
 def plot_parameter_distrib(data, storage_path, performance_metric):
@@ -285,7 +285,7 @@ def plot_parameter_distrib(data, storage_path, performance_metric):
         Label of the performance metric used
     """
     for model in data["Model"].unique(): 
-        sample = data.loc[data["Model"] == method].copy()
+        sample = data.loc[data["Model"] == model].copy()
         sample["Legend"] = "Learning rate: " + sample["Learning rate"].astype(str) + ", Batch size: " + sample["Batch size"].astype(str) + ", Epochs: " + sample["Epochs"].astype(str)
 
         fig, ax = plt.subplots(1, 1, figsize=(16,8))
@@ -296,7 +296,6 @@ def plot_parameter_distrib(data, storage_path, performance_metric):
         sns.scatterplot(sample, x = "Energy (CodeCarbon)", y = performance_metric, hue = "Legend", alpha = 1, palette = "colorblind")
         ax.set_xlabel("Energy measured with CodeCarbon (kWh)")
         ax.set_ylabel(performance_metric)
-        # ax.set_title(f"Plotting energy vs {performance_metric} for {int(n_images)} images with method {int(method)}", ha='left', fontsize=16, loc='left')
         # Get current axis limits
         x_min, x_max = plt.gca().get_xlim()
         y_min, y_max = plt.gca().get_ylim()
@@ -308,8 +307,7 @@ def plot_parameter_distrib(data, storage_path, performance_metric):
         plt.gca().set_xlim(x_min - x_padding, x_max + x_padding)
         plt.gca().set_ylim(y_min - y_padding, y_max + y_padding)
 
-        fig.savefig(os.path.join(storage_path, f"perf_energy_ellipse_seaborn_{int(n_images)}images_method{int(method)}.png"), bbox_inches='tight')
-        # tikzplotlib.save(os.path.join(storage_path, f"perf_energy_ellipse_seaborn_{int(n_images)}images_method{int(method)}.tex"))
+        fig.savefig(os.path.join(storage_path, f"perf_energy_ellipse_seaborn_model{model}.png"), bbox_inches='tight')
         fig.show()
 
         grouped = sample.groupby("Legend")
@@ -357,14 +355,14 @@ def plot_parameter_distrib(data, storage_path, performance_metric):
         fig_plotly.update_xaxes(title="Energy measured with CodeCarbon (kWh)")
         fig_plotly.update_yaxes(title=performance_metric)
         fig_plotly.update_layout(legend_title_text='Parameters')
-        fig_plotly.write_html(os.path.join(storage_path, f"perf_energy_images_model_{model}.html"), include_mathjax='cdn')
+        fig_plotly.write_html(os.path.join(storage_path, f"perf_energy_images_model_{model}.html"), include_mathjax='cdn', include_plotlyjs='/home/verlyndem/Documents/cahier-labo-these/static/plotly.min.js')
 
     sample = data.copy()
     sample["Legend"] = "Model: " + sample["Model"].astype(str) + ", Learning rate: " + sample["Learning rate"].astype(str) + ", Batch size: " + sample["Batch size"].astype(str) + ", Epochs: " + sample["Epochs"].astype(str)
     fig, ax = plt.subplots(1, 1, figsize=(16,8))
     fig_plotly = px.scatter(x=sample["Energy (CodeCarbon)"]/(3.6*1e6), y=sample[performance_metric], color=sample['Legend'])
     fig_plotly.update_xaxes(title="Energy measured with CodeCarbon (kWh)")
-    fig_plotly.write_html(os.path.join(storage_path, f"perf_energy_all.html"), include_mathjax='cdn')
+    fig_plotly.write_html(os.path.join(storage_path, f"perf_energy_all.html"), include_mathjax='cdn', include_plotlyjs='/home/verlyndem/Documents/cahier-labo-these/static/plotly.min.js')
 
 def plot_stats(storage_path, output_path):
     """Main function to plot all statistics.
@@ -381,9 +379,9 @@ def plot_stats(storage_path, output_path):
     chunk = pd.read_csv(output_path, header=0, chunksize=1000)
     data = pd.concat(chunk)
 
-    data_before_pca = data.drop(['Model'], axis=1)
+    # data_before_pca = data.drop(['Model'], axis=1)
 
-    eig, data_pca, data_tsne, tsne_div, coordvar, ccircle, eucl_dist1, eucl_dist2 = analyse_stats(data_before_pca)
+    # eig, data_pca, data_tsne, tsne_div, coordvar, ccircle, eucl_dist1, eucl_dist2 = analyse_stats(data_before_pca)
     data_legend = pd.DataFrame()
     data_legend['Parameters'] = "Moded: " + data["Model"].astype(str) + ", Batch size: " + data["Batch size"].astype(str) + ", Epochs: " + data["Epochs"].astype(str) + ", Learning rate: " + data["Learning rate"].astype(str) 
     performance_metric = "macro_f1"
@@ -391,41 +389,41 @@ def plot_stats(storage_path, output_path):
     print("-"*27)
     print("Plotting correlation matrix")
 
-    plot_correlation_matrix(data, storage_path)
+    # plot_correlation_matrix(data, storage_path)
     
-    print("-"*27)
-    print("Plotting PCA representation")
+    # print("-"*27)
+    # print("Plotting PCA representation")
     
-    plot_pca(eig=eig, data=data_before_pca, data_pca=data_pca, data_legend=data_legend, 
-             eucl_dist1=eucl_dist1, eucl_dist2=eucl_dist2, ccircle=ccircle, 
-             storage_path=storage_path,
-             title_suffix = 'all')
+    # plot_pca(eig=eig, data=data_before_pca, data_pca=data_pca, data_legend=data_legend, 
+    #          eucl_dist1=eucl_dist1, eucl_dist2=eucl_dist2, ccircle=ccircle, 
+    #          storage_path=storage_path,
+    #          title_suffix = 'all')
     
-    print("-"*27)
-    print("Plotting PCA representation for each method and dataset")
+    # print("-"*27)
+    # print("Plotting PCA representation for each model and dataset")
 
-    for model in data["Model"].unique():
-        sample = data.loc[data["Model"] == model]
-        data_legend_sample = data_legend.loc[data["Model"] == model]
+    # for model in data["Model"].unique():
+    #     sample = data.loc[data["Model"] == model]
+    #     data_legend_sample = data_legend.loc[data["Model"] == model]
 
-        if sample.shape[0] > sample.shape[1]:
-            eig_sample, data_pca_sample, _, _, _, ccircle_sample, eucl_dist1_sample, eucl_dist2_sample = analyse_stats(sample)
+    #     if sample.shape[0] > sample.shape[1]:
+    #         eig_sample, data_pca_sample, _, _, _, ccircle_sample, eucl_dist1_sample, eucl_dist2_sample = analyse_stats(sample)
 
-            plot_pca(eig=eig_sample, data=sample, data_pca=data_pca_sample, data_legend=data_legend_sample, 
-                    eucl_dist1=eucl_dist1_sample, eucl_dist2=eucl_dist2_sample, ccircle=ccircle_sample, 
-                    storage_path=storage_path,
-                    title_suffix = f"{n_images}images_method{method}")
-        else:
-            print(f"Not enough samples to plot PCA for method {method} with {n_images} images.")
+    #         plot_pca(eig=eig_sample, data=sample, data_pca=data_pca_sample, data_legend=data_legend_sample, 
+    #                 eucl_dist1=eucl_dist1_sample, eucl_dist2=eucl_dist2_sample, ccircle=ccircle_sample, 
+    #                 storage_path=storage_path,
+    #                 title_suffix = f"model{model}")
+    #     else:
+    #         print(f"Not enough samples to plot PCA for model {model}.")
 
-    print("-"*29)
-    print("Plotting T-SNE representation")
+    # print("-"*29)
+    # print("Plotting T-SNE representation")
 
-    fig = px.scatter(pd.DataFrame.join(pd.DataFrame(data_tsne), data_legend['Parameters']), color="Parameters", x=0, y=1, 
-        # title=f"t-SNE visualization (KL divergence: {tsne_div})", 
-        labels={0: "Dimension 1", 1: "Dimension 2"})
+    # fig = px.scatter(pd.DataFrame.join(pd.DataFrame(data_tsne), data_legend['Parameters']), color="Parameters", x=0, y=1, 
+    #     # title=f"t-SNE visualization (KL divergence: {tsne_div})", 
+    #     labels={0: "Dimension 1", 1: "Dimension 2"})
     
-    fig.write_html(os.path.join(storage_path, "tsne.html"), include_mathjax='cdn')    
+    # fig.write_html(os.path.join(storage_path, "tsne.html"), include_mathjax='cdn', include_plotlyjs='/home/verlyndem/Documents/cahier-labo-these/static/plotly.min.js')    
 
     print("-"*31)
     print("Plotting parameter distribution")
@@ -458,7 +456,7 @@ def plot_stats(storage_path, output_path):
     fig = px.scatter(x = data["Duration"], y = data[performance_metric], color = data_legend['Parameters'], color_discrete_sequence=px.colors.qualitative.Dark24,
             #    title = f"Plotting duration vs {performance_metric}",
                labels=dict(x="Duration (s)", y=performance_metric, color="Parameters"))
-    fig.write_html(os.path.join(storage_path, f"duration_performance.html"), include_mathjax='cdn')
+    fig.write_html(os.path.join(storage_path, f"duration_performance.html"), include_mathjax='cdn', include_plotlyjs='/home/verlyndem/Documents/cahier-labo-these/static/plotly.min.js')
 
     print("Plotting energy measurement comparison")
 
@@ -490,7 +488,7 @@ def plot_stats(storage_path, output_path):
     fig.update_xaxes(title = "Energy measured by the plug (kWh)")
     fig.update_yaxes(title = "Energy measured by CodeCarbon (kWh)")
     fig.write_image(os.path.join(storage_path, f"energy_energy.png"))
-    fig.write_html(os.path.join(storage_path, f"energy_energy.html"), include_mathjax = 'cdn')
+    fig.write_html(os.path.join(storage_path, f"energy_energy.html"), include_mathjax = 'cdn', include_plotlyjs='/home/verlyndem/Documents/cahier-labo-these/static/plotly.min.js')
     
     print("Plotting frugality score")
 
@@ -530,7 +528,7 @@ if __name__ == "__main__":
                 batch = int(paramYaml['parameters']['--batch'])
                 epochs = int(paramYaml['parameters']['--epochs'])
                 lr = float(paramYaml['parameters']['--lr'])
-                model = paramYaml['parameters']['--image']
+                model = paramYaml['parameters']['--model']
                 rgb = int(paramYaml['parameters']['--rgb'])
                 fine_tune = int(paramYaml['parameters']['--finetune'])
 
@@ -551,7 +549,7 @@ if __name__ == "__main__":
                 output_df_i["Batch size"] = batch*np.ones(len(output_df_i))
                 output_df_i["Epochs"] = epochs*np.ones(len(output_df_i))
                 output_df_i["Learning rate"] = lr*np.ones(len(output_df_i))
-                output_df_i["Model"] = model*np.ones(len(output_df_i))
+                output_df_i["Model"] = [model for m in range(len(output_df_i))]
 
                 output_df = pd.concat([output_df, output_df_i], ignore_index=True)
             else:
@@ -566,7 +564,7 @@ if __name__ == "__main__":
                     batch = int(paramYaml['parameters']['--batch'])
                     epochs = int(paramYaml['parameters']['--epochs'])
                     lr = float(paramYaml['parameters']['--lr'])
-                    model = paramYaml['parameters']['--image']
+                    model = paramYaml['parameters']['--model']
                     rgb = int(paramYaml['parameters']['--rgb'])
                     fine_tune = int(paramYaml['parameters']['--finetune'])
 

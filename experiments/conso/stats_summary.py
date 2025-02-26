@@ -87,7 +87,7 @@ def plot_frugality_score(perf, conso, legends, storage_path, title, factor=1, no
     fig.update_xaxes(title_text="w")
     fig.update_yaxes(title_text="Frugality score")
     fig.update_layout(legend_title_text='Parameters')
-    fig.write_html(os.path.join(storage_path, title+ str(factor))+".html", include_mathjax='cdn')
+    fig.write_html(os.path.join(storage_path, title+ str(factor))+".html", include_mathjax='cdn', include_plotlyjs='/home/verlyndem/Documents/cahier-labo-these/static/plotly.min.js')
 
     plt.figure(figsize=(16,8))
     pal = sns.color_palette('colorblind', legend_unique.shape[0])
@@ -155,7 +155,7 @@ def plot_correlation_matrix(data, storage_path):
         height=1000,
         font=dict(size=18)
     )
-    fig.write_html(os.path.join(storage_path, "correlation_matrix.html"), include_mathjax='cdn')
+    fig.write_html(os.path.join(storage_path, "correlation_matrix.html"), include_mathjax='cdn', include_plotlyjs='/home/verlyndem/Documents/cahier-labo-these/static/plotly.min.js')
     fig.write_image(os.path.join(storage_path, "correlation_matrix.png"))
 
     methods_names = ["GLRT", "Robust GLRT", "Log difference"]
@@ -206,7 +206,7 @@ def plot_correlation_matrix(data, storage_path):
         height=2400,
         font=dict(size=35))
     fig.update_annotations(font_size=50)
-    fig.write_html(os.path.join(storage_path, "correlation_matrices.html"), include_mathjax='cdn')
+    fig.write_html(os.path.join(storage_path, "correlation_matrices.html"), include_mathjax='cdn', include_plotlyjs='/home/verlyndem/Documents/cahier-labo-these/static/plotly.min.js')
     fig.write_image(os.path.join(storage_path, "correlation_matrices.png"))
 
     
@@ -313,7 +313,7 @@ def plot_pca(eig, data, data_pca, data_legend, eucl_dist1, eucl_dist2, ccircle, 
         showlegend=False,
         autosize=True
     )
-    fig.write_html(os.path.join(storage_path, f"pca_circle_{title_suffix}.html"), include_mathjax='cdn')
+    fig.write_html(os.path.join(storage_path, f"pca_circle_{title_suffix}.html"), include_mathjax='cdn', include_plotlyjs='/home/verlyndem/Documents/cahier-labo-these/static/plotly.min.js')
     
     # Plot data in PCA representation
 
@@ -342,7 +342,7 @@ def plot_pca(eig, data, data_pca, data_legend, eucl_dist1, eucl_dist2, ccircle, 
         # title=f"Premiers plans factoriels ({np.sum(eig['% variance expliquée'][0:3])})", 
         legend=dict(title="Parameters")
     )
-    fig.write_html(os.path.join(storage_path, f"pca_{title_suffix}.html"), include_mathjax='cdn')
+    fig.write_html(os.path.join(storage_path, f"pca_{title_suffix}.html"), include_mathjax='cdn', include_plotlyjs='/home/verlyndem/Documents/cahier-labo-these/static/plotly.min.js')
 
 
 def plot_parameter_distrib(data, storage_path, performance_metric):
@@ -432,14 +432,14 @@ def plot_parameter_distrib(data, storage_path, performance_metric):
             fig_plotly.update_xaxes(title="Energy measured with CodeCarbon (kWh)")
             fig_plotly.update_yaxes(title=performance_metric)
             fig_plotly.update_layout(legend_title_text='Parameters')
-            fig_plotly.write_html(os.path.join(storage_path, f"perf_energy_{int(n_images)}images_method{int(method)}.html"), include_mathjax='cdn')
+            fig_plotly.write_html(os.path.join(storage_path, f"perf_energy_{int(n_images)}images_method{int(method)}.html"), include_mathjax='cdn', include_plotlyjs='/home/verlyndem/Documents/cahier-labo-these/static/plotly.min.js')
 
     sample = data.copy()
     sample["Legend"] = "Window size: " + sample["Window size"].astype(str) + ", Threads: " + sample["Threads"].astype(str) + ", Method: " + sample["Method"].astype(str) + ", Number of images: " + sample["Number images"].astype(str)
     fig, ax = plt.subplots(1, 1, figsize=(16,8))
     fig_plotly = px.scatter(x=sample["Energy (CodeCarbon)"]/(3.6*1e6), y=sample[performance_metric], color=sample['Legend'])
     fig_plotly.update_xaxes(title="Energy measured with CodeCarbon (kWh)")
-    fig_plotly.write_html(os.path.join(storage_path, f"perf_energy_all.html"), include_mathjax='cdn')
+    fig_plotly.write_html(os.path.join(storage_path, f"perf_energy_all.html"), include_mathjax='cdn', include_plotlyjs='/home/verlyndem/Documents/cahier-labo-these/static/plotly.min.js')
 
 def plot_stats(storage_path, output_path):
     """Main function to plot all statistics.
@@ -506,7 +506,7 @@ def plot_stats(storage_path, output_path):
         # title=f"t-SNE visualization (KL divergence: {tsne_div})", 
         labels={0: "Dimension 1", 1: "Dimension 2"})
     
-    fig.write_html(os.path.join(storage_path, "tsne.html"), include_mathjax='cdn')    
+    fig.write_html(os.path.join(storage_path, "tsne.html"), include_mathjax='cdn', include_plotlyjs='/home/verlyndem/Documents/cahier-labo-these/static/plotly.min.js')    
 
     print("-"*31)
     print("Plotting parameter distribution")
@@ -574,9 +574,15 @@ def plot_stats(storage_path, output_path):
 
     fig, ax = plt.subplots(1, 1, figsize=(16,8))
     fig = px.scatter(x = data["Duration"], y = data[performance_metric], color = data_legend['Parameters'], color_discrete_sequence=px.colors.qualitative.Dark24,
+<<<<<<< HEAD
                     #  title = f"Plotting duration vs {performance_metric}",
                      labels=dict(x="Duration (s)", y=performance_metric, color="Parameters"))
     fig.write_html(os.path.join(storage_path, f"duration_performance.html"), include_mathjax='cdn')
+=======
+            #    title = f"Plotting duration vs {performance_metric}",
+               labels=dict(x="Duration (s)", y=performance_metric, color="Parameters"))
+    fig.write_html(os.path.join(storage_path, f"duration_performance.html"), include_mathjax='cdn', include_plotlyjs='/home/verlyndem/Documents/cahier-labo-these/static/plotly.min.js')
+>>>>>>> a2c0c27f3526725ce1370733e5be04c945819ebc
 
     print("Plotting energy measurement comparison")
 
@@ -608,7 +614,7 @@ def plot_stats(storage_path, output_path):
     fig.update_xaxes(title = "Energy measured by the plug (kWh)")
     fig.update_yaxes(title = "Energy measured by CodeCarbon (kWh)")
     fig.write_image(os.path.join(storage_path, f"energy_energy.png"))
-    fig.write_html(os.path.join(storage_path, f"energy_energy.html"), include_mathjax = 'cdn')
+    fig.write_html(os.path.join(storage_path, f"energy_energy.html"), include_mathjax = 'cdn', include_plotlyjs='/home/verlyndem/Documents/cahier-labo-these/static/plotly.min.js')
     
     print("Plotting frugality score")
 
