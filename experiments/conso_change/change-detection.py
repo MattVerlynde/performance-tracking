@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     os.makedirs(os.path.join(args.storage_path, "output"), exist_ok=True)
 
-    command = f"bash performance-tracking/experiments/conso/simulation_metrics_exec.sh {results_path} {times_path} {args.number_run} python3 performance-tracking/experiments/conso_change/cd_sklearn_pair_var.py --image {args.image} --window {args.window} --cores {int(args.cores)} --robust {int(args.robust)} --storage_path {args.storage_path}"
+    command = f"bash src/performance-tracking/experiments/conso/simulation_metrics_exec.sh {results_path} {times_path} {args.number_run} python3 src/performance-tracking/experiments/conso_change/cd_sklearn_pair_var.py --image {args.image} --window {args.window} --cores {int(args.cores)} --robust {int(args.robust)} --storage_path {args.storage_path}"
 
     result = subprocess.run(command, shell=True)
 
