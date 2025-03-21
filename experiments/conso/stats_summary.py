@@ -574,15 +574,9 @@ def plot_stats(storage_path, output_path):
 
     fig, ax = plt.subplots(1, 1, figsize=(16,8))
     fig = px.scatter(x = data["Duration"], y = data[performance_metric], color = data_legend['Parameters'], color_discrete_sequence=px.colors.qualitative.Dark24,
-<<<<<<< HEAD
                     #  title = f"Plotting duration vs {performance_metric}",
                      labels=dict(x="Duration (s)", y=performance_metric, color="Parameters"))
     fig.write_html(os.path.join(storage_path, f"duration_performance.html"), include_mathjax='cdn')
-=======
-            #    title = f"Plotting duration vs {performance_metric}",
-               labels=dict(x="Duration (s)", y=performance_metric, color="Parameters"))
-    fig.write_html(os.path.join(storage_path, f"duration_performance.html"), include_mathjax='cdn', include_plotlyjs='/home/verlyndem/Documents/cahier-labo-these/static/plotly.min.js')
->>>>>>> a2c0c27f3526725ce1370733e5be04c945819ebc
 
     print("Plotting energy measurement comparison")
 
@@ -642,11 +636,13 @@ if __name__ == "__main__":
     parser.add_argument("--id", type=int, required=True, nargs='+')
     parser.add_argument("--grouped", "-g", type=int, required=True, nargs='+')
     parser.add_argument("--file", "-f", type=bool, default=False)
+    parser.add_argument("--plot", type=bool, default=False)
+    parser.add_argument("--query", type=bool, default=False)
     args = parser.parse_args()
 
 
 
-    output_path = os.path.join(args.storage_path, f"output_all2.csv")
+    output_path = os.path.join(args.storage_path, f"output_all.csv")
     
     if not args.file:
         output_df = pd.DataFrame()
@@ -673,7 +669,7 @@ if __name__ == "__main__":
                 else:
                     n_images = None
 
-                output_df_i = get_stats(results, times, os.path.join(args.storage_path, f"run_{id}"), True)
+                output_df_i = get_stats(results, times, os.path.join(args.storage_path, f"run_{id}"), args.query)
                 output_df_i["Window size"] = window*np.ones(len(output_df_i))
                 output_df_i["Threads"] = cores*np.ones(len(output_df_i))
                 output_df_i["Number images"] = n_images*np.ones(len(output_df_i))
@@ -681,7 +677,9 @@ if __name__ == "__main__":
                 if "--robust" in paramYaml['parameters'].keys():
                     method = paramYaml['parameters']['--robust']
                     if method == 2:
-                        output_df_i[["CPU","Memory","Energy (plug)","Temperature","Reads","Duration","Emissions","Energy (CodeCarbon)"]] = 1e-2*output_df_i[["CPU","Memory","Energy (plug)","Temperature","Reads","Duration","Emissions","Energy (CodeCarbon)"]]
+                        output_df_i[["Duration","Emissions","Energy (CodeCarbon)"]] = 1e-2*output_df_i[["Duration","Emissions","Energy (CodeCarbon)"]]
+                        if args.query:
+                            output_df_i[["CPU","Memory","Energy (plug)","Temperature","Reads"]] = 1e-2*output_df_i[["CPU","Memory","Energy (plug)","Temperature","Reads"]]
                 if "--riemann" in paramYaml['parameters'].keys():
                     method = paramYaml['parameters']['--riemann']
                 output_df_i["Method"] = int(method)*np.ones(len(output_df_i))
@@ -708,7 +706,7 @@ if __name__ == "__main__":
                     else:
                         n_images = None
 
-                    output_df_i = get_stats(results, times, os.path.join(args.storage_path, f"run_{id}", group), True)
+                    output_df_i = get_stats(results, times, os.path.join(args.storage_path, f"run_{id}", group), args.query)
                     output_df_i["Window size"] = window*np.ones(len(output_df_i))
                     output_df_i["Threads"] = cores*np.ones(len(output_df_i))
                     output_df_i["Number images"] = n_images*np.ones(len(output_df_i))
@@ -716,7 +714,9 @@ if __name__ == "__main__":
                     if "--robust" in paramYaml['parameters'].keys():
                         method = paramYaml['parameters']['--robust']
                         if method == 2:
-                            output_df_i[["CPU","Memory","Energy (plug)","Temperature","Reads","Duration","Emissions","Energy (CodeCarbon)"]] = 1e-2*output_df_i[["CPU","Memory","Energy (plug)","Temperature","Reads","Duration","Emissions","Energy (CodeCarbon)"]]
+                            output_df_i[["Duration","Emissions","Energy (CodeCarbon)"]] = 1e-2*output_df_i[["Duration","Emissions","Energy (CodeCarbon)"]]
+                            if args.query:
+                                output_df_i[["CPU","Memory","Energy (plug)","Temperature","Reads"]] = 1e-2*output_df_i[["CPU","Memory","Energy (plug)","Temperature","Reads"]]
                     if "--riemann" in paramYaml['parameters'].keys():
                         method = paramYaml['parameters']['--riemann']
                     output_df_i["Method"] = int(method)*np.ones(len(output_df_i))
@@ -725,4 +725,5 @@ if __name__ == "__main__":
 
         output_df.to_csv(output_path, index=False)
     
-    plot_stats(args.storage_path, output_path)
+    if args.plot:
+        plot_stats(args.storage_path, output_path)
