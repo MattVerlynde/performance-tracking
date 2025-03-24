@@ -67,14 +67,14 @@ def get_stats(results, times, storage_path, query=True):
         if os.path.exists(results):
             os.remove(results)
         query_data(results, times)
-    tab_results = make_table(results)
-    list_integrals = get_score(tab_results,times)
+        tab_results = make_table(results)
+        list_integrals = get_score(tab_results,times)
 
-    params = ["CPU", "Memory", "Energy (plug)", "Temperature", "Reads"]
-    for i in range(len(list_integrals)):
-        param = params[i]
-        list_val = list_integrals[i]
-        stats[param] = pd.DataFrame(list_val)
+        params = ["CPU", "Memory", "Energy (plug)", "Temperature", "Reads"]
+        for i in range(len(list_integrals)):
+            param = params[i]
+            list_val = list_integrals[i]
+            stats[param] = pd.DataFrame(list_val)
 
     df_perf = pd.DataFrame()
     for file in os.listdir(os.path.join(os.path.dirname(results), "output")):
@@ -90,12 +90,10 @@ def get_stats(results, times, storage_path, query=True):
             result = pd.read_csv(os.path.join(os.path.dirname(results), "output", file), index_col=0)
             perf = result
             # perf = get_perf_classif_deep(storage_path)
-            print(perf)
             df_perf = pd.concat([df_perf, perf], axis=0, ignore_index=True)
         
     
     stats = pd.concat([stats, df_perf], axis=1)
-    print(stats)
     stats["Duration"] = pd.DataFrame(get_time(times))
 
     list_carbon = []

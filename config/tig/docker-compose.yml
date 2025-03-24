@@ -1,0 +1,58 @@
+version: "3.8"
+services:
+  influxdb:
+    image: influxdb
+    container_name: influxdb
+    restart: always
+    ports:
+      - 8086:8086
+    hostname: influxdb
+    environment:
+      INFLUX_DB: $INFLUX_DB  # database name
+      INFLUXDB_USER: $INFLUXDB_USER  # user name
+      INFLUXDB_USER_PASSWORD: $INFLUXDB_USER_PASSWORD  # user password
+      DOCKER_INFLUXDB_INIT_MODE: $DOCKER_INFLUXDB_INIT_MODE
+      DOCKER_INFLUXDB_INIT_USERNAME: $DOCKER_INFLUXDB_INIT_USERNAME
+      DOCKER_INFLUXDB_INIT_PASSWORD: $DOCKER_INFLUXDB_INIT_PASSWORD
+      DOCKER_INFLUXDB_INIT_ORG: $DOCKER_INFLUXDB_INIT_ORG
+      DOCKER_INFLUXDB_INIT_BUCKET: $DOCKER_INFLUXDB_INIT_BUCKET
+      DOCKER_INFLUXDB_INIT_RETENTION: $DOCKER_INFLUXDB_INIT_RETENTION
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: $DOCKER_INFLUXDB_INIT_ADMIN_TOKEN
+    volumes:
+      - ./influxdb:/var/lib/influxdb  # volume to store the InfluxDB database
+
+  telegraf:
+    image: telegraf
+    depends_on:
+      - influxdb  # indicate that influxdb is necessary
+    container_name: telegraf
+    restart: always
+    links:
+      - influxdb:influxdb
+    tty: true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock  # necessary to fetch data from the Docker daemon
+      - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf  # configuration file for Telegraf
+      - /:/host:ro # necessary to fetch data from host (processes, threads...)
+
+  grafana:
+    image: grafana/grafana-oss
+    depends_on:
+      - influxdb  # indicate that influxdb is necessary
+    container_name: grafana
+    restart: always
+    ports:
+      - 9090:3000  # port to access the web interface of Grafana
+    links:
+      - influxdb:influxdb
+    environment:
+      GF_INSTALL_PLUGINS: "grafana-clock-panel,\
+                          grafana-influxdb-08-datasource,\
+                          grafana-kairosdb-datasource,\
+                          grafana-piechart-panel,\
+                          grafana-simple-json-datasource,\
+                          grafana-worldmap-panel"
+      GF_SECURITY_ADMIN_USER: $GF_SECURITY_ADMIN_USER  # user name for Grafana
+      GF_SECURITY_ADMIN_PASSWORD: $GF_SECURITY_ADMIN_PASSWORD  # user password for Grafana
+    volumes:
+      - ./grafana:/var/lib/grafana-oss

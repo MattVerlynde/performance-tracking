@@ -636,6 +636,8 @@ if __name__ == "__main__":
     parser.add_argument("--id", type=int, required=True, nargs='+')
     parser.add_argument("--grouped", "-g", type=int, required=True, nargs='+')
     parser.add_argument("--file", "-f", type=bool, default=False)
+    parser.add_argument("--plot", type=bool, default=False)
+    parser.add_argument("--query", type=bool, default=False)
     args = parser.parse_args()
 
 
@@ -667,7 +669,7 @@ if __name__ == "__main__":
                 else:
                     n_images = None
 
-                output_df_i = get_stats(results, times, os.path.join(args.storage_path, f"run_{id}"), True)
+                output_df_i = get_stats(results, times, os.path.join(args.storage_path, f"run_{id}"), args.query)
                 output_df_i["Window size"] = window*np.ones(len(output_df_i))
                 output_df_i["Threads"] = cores*np.ones(len(output_df_i))
                 output_df_i["Number images"] = n_images*np.ones(len(output_df_i))
@@ -675,7 +677,9 @@ if __name__ == "__main__":
                 if "--robust" in paramYaml['parameters'].keys():
                     method = paramYaml['parameters']['--robust']
                     if method == 2:
-                        output_df_i[["CPU","Memory","Energy (plug)","Temperature","Reads","Duration","Emissions","Energy (CodeCarbon)"]] = 1e-2*output_df_i[["CPU","Memory","Energy (plug)","Temperature","Reads","Duration","Emissions","Energy (CodeCarbon)"]]
+                        output_df_i[["Duration","Emissions","Energy (CodeCarbon)"]] = 1e-2*output_df_i[["Duration","Emissions","Energy (CodeCarbon)"]]
+                        if args.query:
+                            output_df_i[["CPU","Memory","Energy (plug)","Temperature","Reads"]] = 1e-2*output_df_i[["CPU","Memory","Energy (plug)","Temperature","Reads"]]
                 if "--riemann" in paramYaml['parameters'].keys():
                     method = paramYaml['parameters']['--riemann']
                 output_df_i["Method"] = int(method)*np.ones(len(output_df_i))
@@ -702,7 +706,7 @@ if __name__ == "__main__":
                     else:
                         n_images = None
 
-                    output_df_i = get_stats(results, times, os.path.join(args.storage_path, f"run_{id}", group), True)
+                    output_df_i = get_stats(results, times, os.path.join(args.storage_path, f"run_{id}", group), args.query)
                     output_df_i["Window size"] = window*np.ones(len(output_df_i))
                     output_df_i["Threads"] = cores*np.ones(len(output_df_i))
                     output_df_i["Number images"] = n_images*np.ones(len(output_df_i))
@@ -710,7 +714,9 @@ if __name__ == "__main__":
                     if "--robust" in paramYaml['parameters'].keys():
                         method = paramYaml['parameters']['--robust']
                         if method == 2:
-                            output_df_i[["CPU","Memory","Energy (plug)","Temperature","Reads","Duration","Emissions","Energy (CodeCarbon)"]] = 1e-2*output_df_i[["CPU","Memory","Energy (plug)","Temperature","Reads","Duration","Emissions","Energy (CodeCarbon)"]]
+                            output_df_i[["Duration","Emissions","Energy (CodeCarbon)"]] = 1e-2*output_df_i[["Duration","Emissions","Energy (CodeCarbon)"]]
+                            if args.query:
+                                output_df_i[["CPU","Memory","Energy (plug)","Temperature","Reads"]] = 1e-2*output_df_i[["CPU","Memory","Energy (plug)","Temperature","Reads"]]
                     if "--riemann" in paramYaml['parameters'].keys():
                         method = paramYaml['parameters']['--riemann']
                     output_df_i["Method"] = int(method)*np.ones(len(output_df_i))
@@ -719,4 +725,5 @@ if __name__ == "__main__":
 
         output_df.to_csv(output_path, index=False)
     
-    plot_stats(args.storage_path, output_path)
+    if args.plot:
+        plot_stats(args.storage_path, output_path)
