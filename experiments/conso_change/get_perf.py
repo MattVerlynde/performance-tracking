@@ -44,6 +44,7 @@ def get_perf_change(storage_path, result):
     """
     with open(os.path.join(storage_path, "group_info.yaml"), 'r') as f:
             paramYaml = yaml.load(f, Loader=yaml.FullLoader)
+    print(paramYaml)
     ref_path = paramYaml['parameters']['--image'] + "_truth.npy"
     reference = np.load(ref_path)
 
