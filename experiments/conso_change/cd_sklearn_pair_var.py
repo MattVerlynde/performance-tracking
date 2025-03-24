@@ -156,11 +156,11 @@ class LogDiffChangeDetection(BaseEstimator, TransformerMixin):
 
     def fit(self, path: str, X=None, y=None):
 
-        for r in range(self.repeat):
+        for _ in range(self.repeat):
             list_images = os.listdir(path)
 
             image_t0 = np.load(os.path.join(path, list_images[0]))
-            mean_diff = np.zeros(image_t0.shape[:2])
+            sum_diff = np.zeros(image_t0.shape[:2], dtype=image_t0.dtype)
             T = len(list_images)
 
             def log_calc(image):
@@ -170,10 +170,10 @@ class LogDiffChangeDetection(BaseEstimator, TransformerMixin):
 
             for i in range(1,T):
                 image_t1 = log_calc(np.load(os.path.join(path, list_images[i])))
-                mean_diff += image_t0 - image_t1
+                sum_diff += image_t0 - image_t1
                 image_t0 = image_t1
-            mean_diff = mean_diff/(T-1)
-            self.result_diff = np.abs(mean_diff)
+            mean_diff = sum_diff/(T-1)
+            self.result_diff = np.abs(sum_diff)
         
         return self
     
@@ -516,7 +516,7 @@ if __name__ == "__main__":
             verbose=False)
     elif args.robust == 2:
         pipeline = Pipeline([
-            ('logdiff_change_detection', LogDiffChangeDetection(threshold=0.95, repeat=100))
+            ('logdiff_change_detection', LogDiffChangeDetection(threshold=0.95, repeat=1000))
             ],
             verbose=False)
     # elif args.robust == 0:

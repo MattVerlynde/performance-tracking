@@ -574,15 +574,9 @@ def plot_stats(storage_path, output_path):
 
     fig, ax = plt.subplots(1, 1, figsize=(16,8))
     fig = px.scatter(x = data["Duration"], y = data[performance_metric], color = data_legend['Parameters'], color_discrete_sequence=px.colors.qualitative.Dark24,
-<<<<<<< HEAD
                     #  title = f"Plotting duration vs {performance_metric}",
                      labels=dict(x="Duration (s)", y=performance_metric, color="Parameters"))
     fig.write_html(os.path.join(storage_path, f"duration_performance.html"), include_mathjax='cdn')
-=======
-            #    title = f"Plotting duration vs {performance_metric}",
-               labels=dict(x="Duration (s)", y=performance_metric, color="Parameters"))
-    fig.write_html(os.path.join(storage_path, f"duration_performance.html"), include_mathjax='cdn', include_plotlyjs='/home/verlyndem/Documents/cahier-labo-these/static/plotly.min.js')
->>>>>>> a2c0c27f3526725ce1370733e5be04c945819ebc
 
     print("Plotting energy measurement comparison")
 
@@ -646,7 +640,7 @@ if __name__ == "__main__":
 
 
 
-    output_path = os.path.join(args.storage_path, f"output_all2.csv")
+    output_path = os.path.join(args.storage_path, f"output_all.csv")
     
     if not args.file:
         output_df = pd.DataFrame()
