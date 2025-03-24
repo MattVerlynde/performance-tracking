@@ -82,12 +82,9 @@ def get_stats(results, times, storage_path, query=True):
             result = np.load(os.path.join(storage_path, "output", file))
             _, _, perf = get_perf_change(storage_path, result)
             df_perf = pd.concat([df_perf, pd.DataFrame([perf])], axis=0, ignore_index=True)
-<<<<<<< HEAD
         elif "clustering-blob" in storage_path:
             perf = get_perf_clustering_blob(storage_path)
             df_perf = pd.concat([df_perf, pd.DataFrame([perf])], axis=0, ignore_index=True)
-=======
->>>>>>> 05958423871125a949a9e73f633d981b9de82379
         elif "clustering" in storage_path:
             # result = np.load(os.path.join(os.path.dirname(results), "output", file))
             perf = get_perf_clustering(storage_path)
