@@ -11,7 +11,7 @@ if __name__ == "__main__":
     parser.add_argument('--batch_size', type=float, default=512, help='Batch size for training and validation')
     parser.add_argument('--data_root', type=str, default='/media/HDD/ImageNet/ImageNet/imagenet', help='Root directory for ImageNet dataset')
     parser.add_argument('--model', type=str, default='resnet18', help='Model architecture to use (e.g., resnet18, resnet50, vgg16, etc.)')
-    parser.add_argument('--pretrained', action='store_true', help='Use pretrained model weights')
+    parser.add_argument('--pretrained', type=str, default='True', help='Use pretrained model weights')
     parser.add_argument('--device', type=str, default='cuda', help='Device to use for training (e.g., cuda, cpu)')
     parser.add_argument('--storage_path', type=str, default='./results', help='Path to store results and logs')
     parser.add_argument('--num_workers', type=float, default=0, help='Number of workers for data loading')
