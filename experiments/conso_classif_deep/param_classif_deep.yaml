@@ -1,80 +1,26 @@
 fixed_args:
     options:
-        '--loss': 'BCEWithLogits'
-        '--optim': 'SGD'
-        '--count': 1
+        '--num_epochs': 30
+        '--batch_size': 512
+        '--data_root': '/media/HDD/ImageNet/ImageNet/imagenet'
+        '--pretrained': True
+        '--device': 'cuda'
+        '--storage_path': './results'
+        '--num_workers': 12
+        '--prefetch_factor': 4
         
 
 varying_args:
+    range:
+        options:
+            '--seed': [0, 11, 1]
+
     groups:
         - options:
-            '--model': 'ShortCNN'
-            '--lr': 0.0001
-            '--batch': 500
-            '--rgb': 1
-            '--epochs': 20
-            '--finetune': 0
+            '--model': 'resnet18'
         
         - options:
-            '--model': 'ShortCNN'
-            '--lr': 0.001
-            '--batch': 500
-            '--rgb': 1
-            '--epochs': 20
-            '--finetune': 0
+            '--model': 'mobilenet_v2'
         
         - options:
-            '--model': 'ShortCNN'
-            '--lr': 0.01
-            '--batch': 500
-            '--rgb': 1
-            '--epochs': 20
-            '--finetune': 0
-        
-        - options:
-            '--model': 'ShortCNN'
-            '--lr': 0.0001
-            '--batch': 500
-            '--rgb': 0
-            '--epochs': 20
-            '--finetune': 0
-        
-        - options:
-            '--model': 'ShortCNN'
-            '--lr': 0.001
-            '--batch': 500
-            '--rgb': 0
-            '--epochs': 20
-            '--finetune': 0
-        
-        - options:
-            '--model': 'ShortCNN'
-            '--lr': 0.01
-            '--batch': 500
-            '--rgb': 0
-            '--epochs': 20
-            '--finetune': 0
-        
-        - options:
-            '--model': 'InceptionV3'
-            '--lr': 0.001
-            '--batch': 200
-            '--rgb': 1
-            '--epochs': 10
-            '--finetune': 0
-        
-        - options:
-            '--model': 'InceptionV3'
-            '--lr': 0.001
-            '--batch': 200
-            '--rgb': 1
-            '--epochs': 10
-            '--finetune': 1
-
-        - options:
-            '--model': 'InceptionV3'
-            '--lr': 0.001
-            '--batch': 200
-            '--rgb': 1
-            '--epochs': 10
-            '--finetune': 2
+            '--model': 'efficientnet_b0'

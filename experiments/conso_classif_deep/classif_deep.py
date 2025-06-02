@@ -6,32 +6,30 @@ import pandas as pd
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--model", '-m', type=str, default='ShortCNN')
-    parser.add_argument("--epochs", '-e', type=float, default=10)
-    parser.add_argument("--optim", '-o', type=str, default='SGD')
-    parser.add_argument("--lr", type=float, default=1e-3)
-    parser.add_argument("--loss", '-l', type=str, default='CrossEntropy')
-    parser.add_argument("--batch", '-b', type=float, default=256)
-    parser.add_argument("--count", type=float, default=0)
-    parser.add_argument("--rgb", type=float, default=1)
-    parser.add_argument("--finetune", type=float, default=0)
-    parser.add_argument("--seed", type=float, default=42)
-    parser.add_argument("--storage_path", type=str, required=True)
+    parser = argparse.ArgumentParser(description='ImageNet Classification with PyTorch')
+    parser.add_argument('--num_epochs', type=float, default=1, help='Number of epochs to train')
+    parser.add_argument('--batch_size', type=float, default=512, help='Batch size for training and validation')
+    parser.add_argument('--data_root', type=str, default='/media/HDD/ImageNet/ImageNet/imagenet', help='Root directory for ImageNet dataset')
+    parser.add_argument('--model', type=str, default='resnet18', help='Model architecture to use (e.g., resnet18, resnet50, vgg16, etc.)')
+    parser.add_argument('--pretrained', action='store_true', help='Use pretrained model weights')
+    parser.add_argument('--device', type=str, default='cuda', help='Device to use for training (e.g., cuda, cpu)')
+    parser.add_argument('--storage_path', type=str, default='./results', help='Path to store results and logs')
+    parser.add_argument('--num_workers', type=float, default=0, help='Number of workers for data loading')
+    parser.add_argument('--seed', type=float, default=37, help='Random seed for reproducibility')
+    parser.add_argument('--prefetch_factor', type=float, default=2, help='Number of batches to prefetch')
     args = parser.parse_args()
 
-    args.epochs = int(args.epochs)
-    args.batch = int(args.batch)
-    args.finetune = int(args.finetune)
+    args.num_epochs = int(args.num_epochs)
+    args.batch_size = int(args.batch_size)
     args.seed = int(args.seed)
-    args.count = "--count" if args.count else "--no-count"
-    args.rgb = "--rgb" if args.rgb else "--no-rgb"
+    args.prefetch_factor = int(args.prefetch_factor)
+    args.num_workers = int(args.num_workers)
 
     results_path = os.path.join(args.storage_path, "results.txt")
     times_path = os.path.join(args.storage_path, "times.txt")
 
     os.makedirs(os.path.join(args.storage_path, "output"), exist_ok=True)
 
-    command = f"bash performance-tracking/experiments/conso_classif_deep/simulation_metrics_exec.sh {results_path} {times_path} python3 train.py --model {args.model} --epochs {args.epochs} --optim {args.optim} --lr {args.lr} --loss {args.loss} --batch {args.batch} --seed {args.seed} {args.count} {args.rgb} --storage_path {args.storage_path}"
+    command = f"bash performance-tracking/experiments/conso_classif_deep/simulation_metrics_exec.sh {results_path} {times_path} python classif_torch.py --model {args.model} --num_epochs {args.num_epochs} --batch_size {args.batch_size} --data_root {args.data_root} --pretrained {args.pretrained} --device {args.device} --num_workers {args.num_workers} --seed {args.seed} --prefetch_factor {args.prefetch_factor} --storage_path {args.storage_path}"
 
     result = subprocess.run(command, shell=True)
