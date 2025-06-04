@@ -20,7 +20,7 @@ from scipy import integrate
 from skimage.metrics import structural_similarity
 
 import sys
-sys.path.append('/home/verlyndem/Documents/Tests_change_detection/SAR-change-detection/performance-tracking/experiments')
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from get_conso import make_table, query_data, filter_time, get_score 
 from conso_change.get_perf import get_perf_change
 from conso_clustering.get_perf import get_perf_clustering
