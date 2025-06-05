@@ -1,6 +1,6 @@
 fixed_args:
     options:
-        '--num_epochs': 30
+        '--num_epochs': 100
         '--batch_size': 512
         '--data_root': '/media/HDD/ImageNet/ImageNet/imagenet'
         '--pretrained': True
@@ -8,6 +8,7 @@ fixed_args:
         '--storage_path': './results'
         '--num_workers': 12
         '--prefetch_factor': 4
+        '--model': 'resnet18'
         
 
 varying_args:
@@ -15,12 +16,12 @@ varying_args:
         options:
             '--seed': [0, 11, 1]
 
-    groups:
-        - options:
-            '--model': 'resnet18'
+    # groups:
+    #     - options:
+            
         
-        - options:
-            '--model': 'mobilenet_v2'
+    #     - options:
+    #         '--model': 'mobilenet_v2'
         
-        - options:
-            '--model': 'efficientnet_b0'
+    #     - options:
+    #         '--model': 'efficientnet_b0'
