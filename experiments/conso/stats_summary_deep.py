@@ -17,7 +17,7 @@ import pandas as pd
 from plotly.subplots import make_subplots
 import plotly.express as px
 import plotly.graph_objects as go
-import tikzplotlib
+# import tikzplotlib
 
 from get_stats import get_stats
 from analyse_stats import analyse_stats 
@@ -525,30 +525,30 @@ if __name__ == "__main__":
                 with open(os.path.join(args.storage_path, f"run_{id}", "group_info.yaml"), 'r') as f:
                     paramYaml = yaml.load(f, Loader=yaml.FullLoader)
                 
-                batch = int(paramYaml['parameters']['--batch'])
-                epochs = int(paramYaml['parameters']['--epochs'])
-                lr = float(paramYaml['parameters']['--lr'])
+                batch = int(paramYaml['parameters']['--batch_size'])
+                epochs = int(paramYaml['parameters']['--num_epochs'])
+                # lr = float(paramYaml['parameters']['--lr'])
                 model = paramYaml['parameters']['--model']
-                rgb = int(paramYaml['parameters']['--rgb'])
-                fine_tune = int(paramYaml['parameters']['--finetune'])
+                # rgb = int(paramYaml['parameters']['--rgb'])
+                # fine_tune = int(paramYaml['parameters']['--finetune'])
 
-                if model == "ShortCNN":
-                    if rgb:
-                        model="S-CNN-RGB"
-                    else:
-                        model="S-CNN-All"
-                elif model == "InceptionV3":
-                    if fine_tune == 1:
-                        model+=" (fine tuned)"
-                    elif fine_tune == 2:
-                        model+=" (from scratch)"
-                    else:
-                        model=" (transfer learning)"
+                # if model == "ShortCNN":
+                #     if rgb:
+                #         model="S-CNN-RGB"
+                #     else:
+                #         model="S-CNN-All"
+                # elif model == "InceptionV3":
+                #     if fine_tune == 1:
+                #         model+=" (fine tuned)"
+                #     elif fine_tune == 2:
+                #         model+=" (from scratch)"
+                #     else:
+                #         model=" (transfer learning)"
 
                 output_df_i = get_stats(results, times, os.path.join(args.storage_path, f"run_{id}"), True)
                 output_df_i["Batch size"] = batch*np.ones(len(output_df_i))
                 output_df_i["Epochs"] = epochs*np.ones(len(output_df_i))
-                output_df_i["Learning rate"] = lr*np.ones(len(output_df_i))
+                # output_df_i["Learning rate"] = lr*np.ones(len(output_df_i))
                 output_df_i["Model"] = [model for m in range(len(output_df_i))]
 
                 output_df = pd.concat([output_df, output_df_i], ignore_index=True)
@@ -561,34 +561,34 @@ if __name__ == "__main__":
                     with open(os.path.join(args.storage_path, f"run_{id}", group, "group_info.yaml"), 'r') as f:
                         paramYaml = yaml.load(f, Loader=yaml.FullLoader)
 
-                    batch = int(paramYaml['parameters']['--batch'])
-                    epochs = int(paramYaml['parameters']['--epochs'])
-                    lr = float(paramYaml['parameters']['--lr'])
+                    batch = int(paramYaml['parameters']['--batch_size'])
+                    epochs = int(paramYaml['parameters']['--num_epochs'])
+                    # lr = float(paramYaml['parameters']['--lr'])
                     model = paramYaml['parameters']['--model']
-                    rgb = int(paramYaml['parameters']['--rgb'])
-                    fine_tune = int(paramYaml['parameters']['--finetune'])
+                    # rgb = int(paramYaml['parameters']['--rgb'])
+                    # fine_tune = int(paramYaml['parameters']['--finetune'])
 
-                    if model == "ShortCNN":
-                        if rgb:
-                            model="S-CNN-RGB"
-                        else:
-                            model="S-CNN-All"
-                    elif model == "InceptionV3":
-                        if fine_tune == 1:
-                            model+=" (fine tuned)"
-                        elif fine_tune == 2:
-                            model+=" (from scratch)"
-                        else:
-                            model=" (transfer learning)"
+                    # if model == "ShortCNN":
+                    #     if rgb:
+                    #         model="S-CNN-RGB"
+                    #     else:
+                    #         model="S-CNN-All"
+                    # elif model == "InceptionV3":
+                    #     if fine_tune == 1:
+                    #         model+=" (fine tuned)"
+                    #     elif fine_tune == 2:
+                    #         model+=" (from scratch)"
+                    #     else:
+                    #         model=" (transfer learning)"
 
                     output_df_i = get_stats(results, times, os.path.join(args.storage_path, f"run_{id}", group), True)
                     output_df_i["Batch size"] = batch*np.ones(len(output_df_i))
                     output_df_i["Epochs"] = epochs*np.ones(len(output_df_i))
-                    output_df_i["Learning rate"] = lr*np.ones(len(output_df_i))
+                    # output_df_i["Learning rate"] = lr*np.ones(len(output_df_i))
                     output_df_i["Model"] = model*np.ones(len(output_df_i))
 
                     output_df = pd.concat([output_df, output_df_i], ignore_index=True)
 
         output_df.to_csv(output_path, index=False)
     
-    plot_stats(args.storage_path, output_path)
+    # plot_stats(args.storage_path, output_path)

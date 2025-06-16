@@ -51,7 +51,9 @@ def make_table(results):
     df_list =[]
     for result in results_list:
         df = pd.DataFrame([x.split(',') for x in result.split('\n') if x.strip()])
+        print(df.head())
         df.drop(df.columns[0:5],axis=1,inplace=True)
+        
         df[5] = pd.to_datetime(df[5]).dt.strftime("%d/%m/%Y %H:%M:%S")
         df_list.append(df)
     
@@ -107,6 +109,7 @@ def get_integral(t, y, d):
         Integral of the variable over the time interval
     """
     T = t.iloc[1]-t.iloc[0]
+    # print(d*T)
     return T*(float(y.iloc[1])+float(y.iloc[0])-2*d)/2
 
 def get_score(df_list,time_path):
@@ -130,17 +133,20 @@ def get_score(df_list,time_path):
         T = t1-t0 # Cold time interval in nanoseconds
     
     list_integrals = []
+    list_integrals_not_filtered = []
 
     i_var = 0
     while i_var < len(df_list):
         df_list_var = filter_time(df_list[i_var],time_path)
         i_df = 0
         list_integrals_var = []
+        list_integrals_var_not_filtered = []
         P0 = np.array([[0.1]])
+        d = 0
         while i_df < len(df_list_var):
             i_row = 0
-            d = 0
             integral = 0
+            integral_not_filtered = 0
 
             # df_list_var[i_df].iloc[:,1], P0 = kalmann_filter(df_list_var[i_df].iloc[:,1].astype('float'), P0)
 
@@ -149,16 +155,21 @@ def get_score(df_list,time_path):
                 y = df_list_var[i_df].iloc[i_row:i_row+2,1]
                 i_row += 1
                 integral += get_integral(x,y,d)
+                integral_not_filtered += get_integral(x,y,0)
             if i_df == 0:
                 d = integral/T
+                # print(f"Standardisation factor: {d}")
             elif i_df > 1:
+                # print(integral_not_filtered - integral)
                 list_integrals_var.append(integral/1e9) # Converting nanoseconds to seconds
+                list_integrals_var_not_filtered.append(integral_not_filtered/1e9) # Converting nanoseconds to seconds
             i_df += 1
         list_integrals.append(list_integrals_var)
+        list_integrals_not_filtered.append(list_integrals_var_not_filtered)
         i_var += 1
 
 
-    return list_integrals
+    return list_integrals, list_integrals_not_filtered
 
 def kalmann_filter(y, P0):
     """
