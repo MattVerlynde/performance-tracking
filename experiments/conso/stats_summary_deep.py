@@ -585,7 +585,7 @@ if __name__ == "__main__":
                     output_df_i["Batch size"] = batch*np.ones(len(output_df_i))
                     output_df_i["Epochs"] = epochs*np.ones(len(output_df_i))
                     # output_df_i["Learning rate"] = lr*np.ones(len(output_df_i))
-                    output_df_i["Model"] = model*np.ones(len(output_df_i))
+                    output_df_i["Model"] = [model for _ in range(len(output_df_i))]
 
                     output_df = pd.concat([output_df, output_df_i], ignore_index=True)
 
