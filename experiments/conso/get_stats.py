@@ -75,6 +75,7 @@ def get_stats(results, times, storage_path, query=True):
             param = params[i]
             list_val = list_integrals[i]
             list_val_not_filtered = list_integrals_not_filtered[i]
+            print(list_val)
             stats[param] = pd.DataFrame(list_val)
             stats_not_filtered[param] = pd.DataFrame(list_val_not_filtered)
 
