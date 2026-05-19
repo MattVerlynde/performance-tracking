@@ -50,6 +50,8 @@ def make_table(results):
             
     df_list =[]
     for result in results_list:
+        print("Processing new variable...")
+        print(len(result.split('\n')))
         df = pd.DataFrame([x.split(',') for x in result.split('\n') if x.strip()])
         print(df.head())
         df.drop(df.columns[0:5],axis=1,inplace=True)
