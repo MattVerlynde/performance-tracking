@@ -33,6 +33,6 @@ if __name__ == "__main__":
 
     os.makedirs(os.path.join(args.storage_path, "output"), exist_ok=True)
 
-    command = f"bash performance-tracking/experiments/conso_classif_deep/simulation_metrics_exec.sh {results_path} {times_path} python classification.py --dataset {args.dataset} --model {args.model} --num_epochs {args.num_epochs} --batch_size {args.batch_size} --data_root {args.data_root} --pretrained {args.pretrained} --device {args.device} --num_workers {args.num_workers} --seed {args.seed} --prefetch_factor {args.prefetch_factor} --max_stagnation {args.max_stagnation} --learning_rate {args.learning_rate} --storage_path {args.storage_path}"
+    command = f"bash performance-tracking/experiments/frugalscenarii/simulation_metrics_exec.sh {results_path} {times_path} python classification.py --dataset {args.dataset} --model {args.model} --num_epochs {args.num_epochs} --batch_size {args.batch_size} --data_root {args.data_root} --pretrained {args.pretrained} --device {args.device} --num_workers {args.num_workers} --seed {args.seed} --prefetch_factor {args.prefetch_factor} --max_stagnation {args.max_stagnation} --learning_rate {args.learning_rate} --storage_path {args.storage_path}"
 
     result = subprocess.run(command, shell=True)
