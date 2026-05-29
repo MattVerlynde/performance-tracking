@@ -1,0 +1,45 @@
+fixed_args:
+    options:
+        '--num_epochs': 500
+        '--batch_size': 128
+        '--device': 'cuda'
+        '--storage_path': './results'
+        '--num_workers': 12
+        '--prefetch_factor': 4
+        '--dataset': 'mnist'
+        '--data_root': './data/mnist'
+        
+
+varying_args:
+    range:
+        options:
+            '--seed': [0, 9, 1]
+
+    groups:
+        - options:
+            
+            '--model': 'resnet18'
+        
+        - options:
+            '--model': 'resnet50'
+        
+        - options:
+            '--model': 'vgg16'
+
+        - options:
+            '--model': 'vgg16_bn'
+        
+        - options:
+            '--model': 'densenet121'
+        
+        - options:
+            '--model': 'mobilenet_v2'
+        
+        - options:
+            '--model': 'efficientnet_b0'
+        
+        - options:
+            '--model': 'shufflenet_v2_x0_5'
+        
+        - options:
+            '--model': 'squeezenet1_0'
